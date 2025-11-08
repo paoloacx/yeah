@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#4CAF50">
+    <title>Estadísticas - Yeah!</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="index.html" class="back-btn">← Volver</a>
+            <h1>Estadísticas</h1>
+        </header>
+
+        <main>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="statTotal">0</div>
+                    <div class="stat-label">Total Check-ins</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="statPlaces">0</div>
+                    <div class="stat-label">Lugares Únicos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="statPhotos">0</div>
+                    <div class="stat-label">Con Fotos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="statNotes">0</div>
+                    <div class="stat-label">Con Notas</div>
+                </div>
+            </div>
+
+            <div class="stats-section">
+                <h2>Lugares más visitados</h2>
+                <div id="topPlaces" class="top-list"></div>
+            </div>
+
+            <div class="stats-section">
+                <h2>Check-ins por mes</h2>
+                <div id="monthlyChart" class="chart"></div>
+            </div>
+
+            <div class="stats-section">
+                <h2>Check-ins por día de la semana</h2>
+                <div id="weekdayChart" class="chart"></div>
+            </div>
+
+            <div class="stats-section">
+                <h2>Mapa de calor</h2>
+                <div id="heatMap"></div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/maps.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            loadStats();
+        });
+
+        function loadStats() {
+            const checkins = Storage.getAllCheckins();
+            const stats = Storage.getStats();
+
+            document.getElementById('statTotal').textContent = stats.total;
+            document.getElementById('statPlaces').textContent = stats.uniquePlaces;
+            document.getElementById('statPhotos').textContent = stats.withPhotos;
+            document.getElementById('statNotes').textContent = stats.withNotes;
+
+            loadTopPlaces(checkins);
+            loadMonthlyStats(checkins);
+            loadWeekdayStats(checkins);
+            loadHeatMap(checkins);
+        }
+
+        function loadTopPlaces(checkins) {
+            const placeCounts = {};
+            
+            checkins.forEach(checkin => {
+                const placeName = checkin.place ? checkin.place.name : 'Ubicación GPS';
+                placeCounts[placeName] = (placeCounts[placeName] || 0) + 1;
+            });
+
+            const sorted = Object.entries(placeCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10);
+
+            const container = document.getElementById('topPlaces');
+            
+            if (sorted.length === 0) {
+                container.innerHTML = '<p class="hint">No hay datos todavía</p>';
+                return;
+            }
+
+            container.innerHTML = sorted.map(([place, count]) => `
+                <div class="top-item">
+                    <span class="place-name">${place}</span>
+                    <span class="place-count">${count} visita${count > 1 ? 's' : ''}</span>
+                </div>
+            `).join('');
+        }
+
+        function loadMonthlyStats(checkins) {
+            const monthlyCounts = {};
+            
+            checkins.forEach(checkin => {
+                const date = new Date(checkin.timestamp);
+                const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                monthlyCounts[monthKey] = (monthlyCounts[monthKey] || 0) + 1;
+            });
+
+            const sorted = Object.entries(monthlyCounts).sort();
+            const container = document.getElementById('monthlyChart');
+            
+            if (sorted.length === 0) {
+                container.innerHTML = '<p class="hint">No hay datos todavía</p>';
+                return;
+            }
+
+            const maxCount = Math.max(...sorted.map(([, count]) => count));
+            
+            container.innerHTML = sorted.map(([month, count]) => {
+                const percentage = (count / maxCount) * 100;
+                const [year, monthNum] = month.split('-');
+                const monthName = new Date(year, parseInt(monthNum) - 1).toLocaleDateString('es-ES', { month: 'short', year: 'numeric' });
+                
+                return `
+                    <div class="chart-bar">
+                        <span class="bar-label">${monthName}</span>
+                        <div class="bar-container">
+                            <div class="bar-fill" style="width: ${percentage}%"></div>
+                        </div>
+                        <span class="bar-value">${count}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function loadWeekdayStats(checkins) {
+            const weekdays = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+            const weekdayCounts = [0, 0, 0, 0, 0, 0, 0];
+            
+            checkins.forEach(checkin => {
+                const date = new Date(checkin.timestamp);
+                weekdayCounts[date.getDay()]++;
+            });
+
+            const container = document.getElementById('weekdayChart');
+            
+            if (checkins.length === 0) {
+                container.innerHTML = '<p class="hint">No hay datos todavía</p>';
+                return;
+            }
+
+            const maxCount = Math.max(...weekdayCounts);
+            
+            container.innerHTML = weekdayCounts.map((count, index) => {
+                const percentage = maxCount > 0 ? (count / maxCount) * 100 : 0;
+                
+                return `
+                    <div class="chart-bar">
+                        <span class="bar-label">${weekdays[index]}</span>
+                        <div class="bar-container">
+                            <div class="bar-fill" style="width: ${percentage}%"></div>
+                        </div>
+                        <span class="bar-value">${count}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function loadHeatMap(checkins) {
+            const container = document.getElementById('heatMap');
+            
+            if (checkins.length === 0) {
+                container.innerHTML = '<p class="hint">No hay datos todavía</p>';
+                return;
+            }
+
+            const map = Maps.createMap('heatMap', 40.4168, -3.7038, 6);
+            
+            const locationCounts = {};
+            checkins.forEach(checkin => {
+                const key = `${checkin.location.lat.toFixed(4)},${checkin.location.lng.toFixed(4)}`;
+                locationCounts[key] = (locationCounts[key] || 0) + 1;
+            });
+
+            Object.entries(locationCounts).forEach(([coords, count]) => {
+                const [lat, lng] = coords.split(',').map(Number);
+                const radius = Math.min(5 + count * 2, 20);
+                
+                L.circleMarker([lat, lng], {
+                    radius: radius,
+                    fillColor: '#4CAF50',
+                    color: '#2E7D32',
+                    weight: 1,
+                    opacity: 0.8,
+                    fillOpacity: 0.6
+                }).addTo(map).bindPopup(`${count} check-in${count > 1 ? 's' : ''}`);
+            });
+
+            const bounds = checkins.map(c => [c.location.lat, c.location.lng]);
+            map.fitBounds(bounds, { padding: [50, 50] });
+        }
+    </script>
+</body>
+</html>
