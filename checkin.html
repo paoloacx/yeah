@@ -118,8 +118,9 @@
                 });
                 const reverseData = await reverseResponse.json();
                 
-                // Buscar lugares cercanos (radio ~100m)
-                const searchUrl = `https://nominatim.openstreetmap.org/search?format=json&lat=${lat}&lon=${lng}&limit=10`;
+                // Buscar lugares cercanos usando boundingbox
+                const bbox = [lng - 0.005, lat - 0.005, lng + 0.005, lat + 0.005].join(',');
+                const searchUrl = `https://nominatim.openstreetmap.org/search?format=json&viewbox=${bbox}&bounded=1&limit=10`;
                 const searchResponse = await fetch(searchUrl, {
                     headers: { 'User-Agent': 'YeahApp/1.0' }
                 });
@@ -137,17 +138,19 @@
                     });
                 }
                 
-                // Añadir lugares cercanos
-                searchData.forEach(place => {
-                    if (place.display_name && place.display_name !== reverseData.display_name) {
-                        places.push({
-                            name: place.display_name,
-                            lat: place.lat,
-                            lng: place.lon,
-                            type: place.type
-                        });
-                    }
-                });
+                // Añadir lugares cercanos si es un array
+                if (Array.isArray(searchData)) {
+                    searchData.forEach(place => {
+                        if (place.display_name && place.display_name !== reverseData.display_name) {
+                            places.push({
+                                name: place.display_name,
+                                lat: place.lat,
+                                lng: place.lon,
+                                type: place.type
+                            });
+                        }
+                    });
+                }
                 
                 if (places.length === 0) {
                     resultsDiv.innerHTML = '<p class="hint">No se encontraron lugares cercanos. Puedes buscar manualmente o guardar solo GPS.</p>';
@@ -155,7 +158,7 @@
                 }
                 
                 resultsDiv.innerHTML = '<div class="hint" style="margin-bottom: 0.5rem;">Lugares cercanos:</div>' + 
-                    places.map(place => `
+                    places.slice(0, 5).map(place => `
                         <div class="place-item" data-place='${JSON.stringify(place)}'>
                             ${place.name}
                         </div>
