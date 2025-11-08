@@ -105,23 +105,135 @@
             );
         });
 
-        // Buscar lugares cercanos (placeholder para Google Places API)
-        function searchNearbyPlaces(lat, lng) {
+        // Buscar lugares cercanos con Nominatim (OpenStreetMap)
+        async function searchNearbyPlaces(lat, lng) {
             const resultsDiv = document.getElementById('placeResults');
-            resultsDiv.innerHTML = '<p class="hint">API de Google Places no configurada. Puedes guardar solo las coordenadas GPS.</p>';
+            resultsDiv.innerHTML = '<p class="hint">Buscando lugares cercanos...</p>';
             
-            // TODO: Implementar cuando se tenga API key de Google Places
-            // const apiKey = 'TU_API_KEY';
-            // fetch(`https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=100&key=${apiKey}`)
+            try {
+                // Búsqueda inversa para obtener dirección actual
+                const reverseUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
+                const reverseResponse = await fetch(reverseUrl, {
+                    headers: { 'User-Agent': 'YeahApp/1.0' }
+                });
+                const reverseData = await reverseResponse.json();
+                
+                // Buscar lugares cercanos (radio ~100m)
+                const searchUrl = `https://nominatim.openstreetmap.org/search?format=json&lat=${lat}&lon=${lng}&limit=10`;
+                const searchResponse = await fetch(searchUrl, {
+                    headers: { 'User-Agent': 'YeahApp/1.0' }
+                });
+                const searchData = await searchResponse.json();
+                
+                const places = [];
+                
+                // Añadir dirección actual si existe
+                if (reverseData.display_name) {
+                    places.push({
+                        name: reverseData.display_name,
+                        lat: reverseData.lat,
+                        lng: reverseData.lon,
+                        type: 'address'
+                    });
+                }
+                
+                // Añadir lugares cercanos
+                searchData.forEach(place => {
+                    if (place.display_name && place.display_name !== reverseData.display_name) {
+                        places.push({
+                            name: place.display_name,
+                            lat: place.lat,
+                            lng: place.lon,
+                            type: place.type
+                        });
+                    }
+                });
+                
+                if (places.length === 0) {
+                    resultsDiv.innerHTML = '<p class="hint">No se encontraron lugares cercanos. Puedes buscar manualmente o guardar solo GPS.</p>';
+                    return;
+                }
+                
+                resultsDiv.innerHTML = '<div class="hint" style="margin-bottom: 0.5rem;">Lugares cercanos:</div>' + 
+                    places.map(place => `
+                        <div class="place-item" data-place='${JSON.stringify(place)}'>
+                            ${place.name}
+                        </div>
+                    `).join('');
+                
+                // Event listeners para seleccionar lugar
+                document.querySelectorAll('.place-item').forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        document.querySelectorAll('.place-item').forEach(p => p.classList.remove('selected'));
+                        e.currentTarget.classList.add('selected');
+                        selectedPlace = JSON.parse(e.currentTarget.dataset.place);
+                    });
+                });
+                
+            } catch (error) {
+                console.error('Error buscando lugares:', error);
+                resultsDiv.innerHTML = '<p class="hint">Error al buscar lugares. Puedes guardar solo las coordenadas GPS.</p>';
+            }
         }
 
         // Búsqueda manual de lugares
-        document.getElementById('placeSearch').addEventListener('input', (e) => {
-            const query = e.target.value;
-            if (query.length < 3) return;
+        let searchTimeout;
+        document.getElementById('placeSearch').addEventListener('input', async (e) => {
+            const query = e.target.value.trim();
+            const resultsDiv = document.getElementById('placeResults');
             
-            // TODO: Implementar búsqueda con Google Places API cuando esté disponible
-            document.getElementById('placeResults').innerHTML = '<p class="hint">Búsqueda disponible cuando se configure Google Places API</p>';
+            if (query.length < 3) {
+                if (!currentPosition) return;
+                searchNearbyPlaces(currentPosition.lat, currentPosition.lng);
+                return;
+            }
+            
+            clearTimeout(searchTimeout);
+            resultsDiv.innerHTML = '<p class="hint">Buscando...</p>';
+            
+            searchTimeout = setTimeout(async () => {
+                try {
+                    // Buscar cerca de la ubicación actual si existe
+                    let searchUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=10`;
+                    if (currentPosition) {
+                        searchUrl += `&lat=${currentPosition.lat}&lon=${currentPosition.lng}&bounded=1&viewbox=${currentPosition.lng-0.01},${currentPosition.lat-0.01},${currentPosition.lng+0.01},${currentPosition.lat+0.01}`;
+                    }
+                    
+                    const response = await fetch(searchUrl, {
+                        headers: { 'User-Agent': 'YeahApp/1.0' }
+                    });
+                    const data = await response.json();
+                    
+                    if (data.length === 0) {
+                        resultsDiv.innerHTML = '<p class="hint">No se encontraron resultados</p>';
+                        return;
+                    }
+                    
+                    resultsDiv.innerHTML = data.map(place => `
+                        <div class="place-item" data-place='${JSON.stringify({
+                            name: place.display_name,
+                            lat: place.lat,
+                            lng: place.lon,
+                            type: place.type
+                        })}'>
+                            ${place.display_name}
+                        </div>
+                    `).join('');
+                    
+                    // Event listeners para seleccionar lugar
+                    document.querySelectorAll('.place-item').forEach(item => {
+                        item.addEventListener('click', (e) => {
+                            document.querySelectorAll('.place-item').forEach(p => p.classList.remove('selected'));
+                            e.currentTarget.classList.add('selected');
+                            selectedPlace = JSON.parse(e.currentTarget.dataset.place);
+                        });
+                    });
+                    
+                } catch (error) {
+                    console.error('Error en búsqueda:', error);
+                    resultsDiv.innerHTML = '<p class="hint">Error al buscar. Intenta de nuevo.</p>';
+                }
+            }, 500); // Esperar 500ms después de que el usuario deje de escribir
         });
 
         // Manejo de foto
