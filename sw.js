@@ -21,9 +21,15 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  // Ignorar peticiones de extensiones y protocolos no HTTP
+  if (!event.request.url.startsWith('http')) {
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then((response) => response || fetch(event.request))
+      .catch(() => fetch(event.request))
   );
 });
 
