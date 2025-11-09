@@ -61,7 +61,7 @@ body {
 
 .card {
     position: absolute;
-    width: 100%;
+    width: 85%;
     max-width: 420px;
     height: calc(100vh - 180px);
     max-height: 700px;
