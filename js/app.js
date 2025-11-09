@@ -91,11 +91,11 @@ const CardStack = {
 
         // Determinar si el swipe fue suficiente
         if (Math.abs(diff) > this.dragThreshold) {
-            if (diff < 0 && this.currentIndex < this.totalCards - 1) {
-                // Swipe izquierda - siguiente tarjeta
+            if (diff < 0) {
+                // Swipe izquierda - siguiente tarjeta (con circular)
                 this.next();
-            } else if (diff > 0 && this.currentIndex > 0) {
-                // Swipe derecha - tarjeta anterior
+            } else if (diff > 0) {
+                // Swipe derecha - tarjeta anterior (con circular)
                 this.prev();
             }
         }
@@ -106,19 +106,23 @@ const CardStack = {
     },
 
     next() {
-        if (this.currentIndex < this.totalCards - 1) {
-            this.currentIndex++;
-            this.updatePositions();
-            this.initCard(this.currentIndex);
+        this.currentIndex++;
+        // Navegación circular: después de la última tarjeta, volver a la primera
+        if (this.currentIndex >= this.totalCards) {
+            this.currentIndex = 0;
         }
+        this.updatePositions();
+        this.initCard(this.currentIndex);
     },
 
     prev() {
-        if (this.currentIndex > 0) {
-            this.currentIndex--;
-            this.updatePositions();
-            this.initCard(this.currentIndex);
+        this.currentIndex--;
+        // Navegación circular: antes de la primera tarjeta, ir a la última
+        if (this.currentIndex < 0) {
+            this.currentIndex = this.totalCards - 1;
         }
+        this.updatePositions();
+        this.initCard(this.currentIndex);
     },
 
     updatePositions() {
