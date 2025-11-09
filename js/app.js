@@ -1,46 +1,152 @@
-// Sistema de navegación por tarjetas estilo webOS
-const Cards = {
-    current: 'map',
-    history: ['map'],
+// Sistema de navegación con swipe físico estilo SwipeNote
+const CardStack = {
+    currentIndex: 0,
+    cards: [],
+    totalCards: 5,
+    isDragging: false,
+    startX: 0,
+    currentX: 0,
+    dragThreshold: 100,
 
-    show(cardName) {
-        const currentCard = document.querySelector('.card.active');
-        const nextCard = document.getElementById(`card${cardName.charAt(0).toUpperCase() + cardName.slice(1)}`);
-
-        if (!nextCard || currentCard === nextCard) return;
-
-        // Animación de salida
-        currentCard.classList.remove('active');
-        currentCard.classList.add('left');
-
-        // Animación de entrada
+    init() {
+        this.cards = Array.from(document.querySelectorAll('.card'));
+        this.updatePositions();
+        this.attachEventListeners();
+        
+        // Ocultar hint después de 3 segundos
         setTimeout(() => {
-            nextCard.classList.remove('left');
-            nextCard.classList.add('active');
-            this.current = cardName;
-            this.history.push(cardName);
+            const hint = document.getElementById('swipeHint');
+            if (hint) hint.style.display = 'none';
+        }, 3000);
 
-            // Inicializar contenido de la tarjeta
-            this.initCard(cardName);
-        }, 100);
+        // Inicializar primera tarjeta
+        this.initCard(0);
     },
 
-    back() {
-        if (this.history.length > 1) {
-            this.history.pop();
-            const previous = this.history[this.history.length - 1];
-            this.show(previous);
+    attachEventListeners() {
+        const stack = document.getElementById('cardStack');
+
+        // Touch events
+        stack.addEventListener('touchstart', (e) => this.handleDragStart(e), { passive: true });
+        stack.addEventListener('touchmove', (e) => this.handleDragMove(e), { passive: false });
+        stack.addEventListener('touchend', (e) => this.handleDragEnd(e));
+
+        // Mouse events (para desktop)
+        stack.addEventListener('mousedown', (e) => this.handleDragStart(e));
+        stack.addEventListener('mousemove', (e) => this.handleDragMove(e));
+        stack.addEventListener('mouseup', (e) => this.handleDragEnd(e));
+        stack.addEventListener('mouseleave', (e) => this.handleDragEnd(e));
+
+        // Prevenir scroll mientras se arrastra
+        stack.addEventListener('touchmove', (e) => {
+            if (this.isDragging) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+    },
+
+    handleDragStart(e) {
+        const activeCard = this.cards[this.currentIndex];
+        if (!activeCard) return;
+
+        // Solo permitir drag en la tarjeta activa
+        const touch = e.touches ? e.touches[0] : e;
+        this.startX = touch.clientX;
+        this.isDragging = true;
+        activeCard.classList.add('dragging');
+    },
+
+    handleDragMove(e) {
+        if (!this.isDragging) return;
+
+        const touch = e.touches ? e.touches[0] : e;
+        this.currentX = touch.clientX;
+        const diff = this.currentX - this.startX;
+
+        const activeCard = this.cards[this.currentIndex];
+        if (!activeCard) return;
+
+        // Aplicar transformación durante el arrastre
+        const progress = Math.min(Math.abs(diff) / this.dragThreshold, 1);
+        const direction = diff > 0 ? 1 : -1;
+
+        activeCard.style.transform = `translateX(${diff}px) scale(${1 - progress * 0.1}) rotateY(${direction * progress * 5}deg)`;
+        activeCard.style.opacity = 1 - progress * 0.3;
+    },
+
+    handleDragEnd(e) {
+        if (!this.isDragging) return;
+
+        const diff = this.currentX - this.startX;
+        const activeCard = this.cards[this.currentIndex];
+        
+        if (!activeCard) {
+            this.isDragging = false;
+            return;
+        }
+
+        activeCard.classList.remove('dragging');
+        activeCard.style.transform = '';
+        activeCard.style.opacity = '';
+
+        // Determinar si el swipe fue suficiente
+        if (Math.abs(diff) > this.dragThreshold) {
+            if (diff < 0 && this.currentIndex < this.totalCards - 1) {
+                // Swipe izquierda - siguiente tarjeta
+                this.next();
+            } else if (diff > 0 && this.currentIndex > 0) {
+                // Swipe derecha - tarjeta anterior
+                this.prev();
+            }
+        }
+
+        this.isDragging = false;
+        this.startX = 0;
+        this.currentX = 0;
+    },
+
+    next() {
+        if (this.currentIndex < this.totalCards - 1) {
+            this.currentIndex++;
+            this.updatePositions();
+            this.initCard(this.currentIndex);
         }
     },
 
-    initCard(cardName) {
+    prev() {
+        if (this.currentIndex > 0) {
+            this.currentIndex--;
+            this.updatePositions();
+            this.initCard(this.currentIndex);
+        }
+    },
+
+    updatePositions() {
+        this.cards.forEach((card, index) => {
+            const position = index - this.currentIndex;
+            card.setAttribute('data-position', position);
+            
+            // Actualizar indicadores
+            const dots = card.querySelectorAll('.dot');
+            dots.forEach((dot, i) => {
+                dot.classList.toggle('active', i === this.currentIndex);
+            });
+        });
+    },
+
+    initCard(index) {
+        const cardNames = ['map', 'checkin', 'history', 'stats', 'settings'];
+        const cardName = cardNames[index];
+
         switch(cardName) {
             case 'map':
                 if (!mainMap) {
                     initMainMap();
                 } else {
-                    setTimeout(() => mainMap.invalidateSize(), 100);
-                    loadCheckinsOnMap();
+                    setTimeout(() => {
+                        mainMap.invalidateSize();
+                        loadCheckinsOnMap();
+                    }, 100);
                 }
                 break;
             case 'checkin':
@@ -52,8 +158,8 @@ const Cards = {
             case 'stats':
                 loadStats();
                 break;
-            case 'export':
-                initExport();
+            case 'settings':
+                initSettings();
                 break;
         }
     }
@@ -68,40 +174,8 @@ let compressedPhoto = null;
 
 // Inicialización
 document.addEventListener('DOMContentLoaded', () => {
-    initApp();
+    CardStack.init();
 });
-
-function initApp() {
-    // Inicializar mapa principal
-    initMainMap();
-
-    // Wave Launcher
-    document.querySelectorAll('.wave-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const action = btn.dataset.action;
-            Cards.show(action);
-        });
-    });
-
-    // Detectar swipe para volver atrás
-    let touchStartX = 0;
-    let touchEndX = 0;
-
-    document.addEventListener('touchstart', e => {
-        touchStartX = e.changedTouches[0].screenX;
-    });
-
-    document.addEventListener('touchend', e => {
-        touchEndX = e.changedTouches[0].screenX;
-        handleSwipe();
-    });
-
-    function handleSwipe() {
-        if (touchEndX - touchStartX > 100 && Cards.current !== 'map') {
-            Cards.show('map');
-        }
-    }
-}
 
 // Mapa principal
 function initMainMap() {
@@ -111,7 +185,7 @@ function initMainMap() {
             loadCheckinsOnMap();
         })
         .catch(error => {
-            console.log('Ubicación no disponible, usando Madrid');
+            console.log('Ubicación no disponible');
             mainMap = Maps.createMap('map', 40.4168, -3.7038, 6);
             loadCheckinsOnMap();
         });
@@ -159,24 +233,20 @@ function initCheckin() {
             status.classList.add('success');
             locationDisplay.textContent = `${currentPosition.lat.toFixed(6)}, ${currentPosition.lng.toFixed(6)}`;
 
-            // Inicializar mapa preview
             if (checkinMap) {
                 checkinMap.remove();
             }
             checkinMap = Maps.createMap('mapPreview', currentPosition.lat, currentPosition.lng, 16);
             Maps.addMarker(checkinMap, currentPosition.lat, currentPosition.lng);
 
-            // Buscar lugares cercanos
             searchNearbyPlaces(currentPosition.lat, currentPosition.lng);
         },
         (error) => {
             status.textContent = 'Error obteniendo ubicación';
             status.classList.add('error');
-            console.error(error);
         }
     );
 
-    // Búsqueda manual
     const searchBtn = document.getElementById('searchBtn');
     const placeSearch = document.getElementById('placeSearch');
 
@@ -188,10 +258,7 @@ function initCheckin() {
         }
     };
 
-    // Foto
     document.getElementById('placePhoto').onchange = handlePhoto;
-
-    // Guardar
     document.getElementById('saveCheckin').onclick = saveCheckin;
 }
 
@@ -238,7 +305,7 @@ async function searchNearbyPlaces(lat, lng) {
         }
 
         if (places.length === 0) {
-            resultsDiv.innerHTML = '<p class="hint">No se encontraron lugares. Busca manualmente o guarda solo GPS.</p>';
+            resultsDiv.innerHTML = '<p class="hint">No se encontraron lugares.</p>';
             return;
         }
 
@@ -258,8 +325,7 @@ async function searchNearbyPlaces(lat, lng) {
         });
 
     } catch (error) {
-        console.error('Error buscando lugares:', error);
-        resultsDiv.innerHTML = '<p class="hint">Error al buscar. Puedes guardar solo GPS.</p>';
+        resultsDiv.innerHTML = '<p class="hint">Error al buscar.</p>';
     }
 }
 
@@ -268,7 +334,7 @@ async function performSearch() {
     const resultsDiv = document.getElementById('placeResults');
 
     if (query.length < 3) {
-        resultsDiv.innerHTML = '<p class="hint">Escribe al menos 3 caracteres</p>';
+        resultsDiv.innerHTML = '<p class="hint">Mínimo 3 caracteres</p>';
         return;
     }
 
@@ -310,8 +376,7 @@ async function performSearch() {
         });
 
     } catch (error) {
-        console.error('Error:', error);
-        resultsDiv.innerHTML = '<p class="hint">Error al buscar</p>';
+        resultsDiv.innerHTML = '<p class="hint">Error</p>';
     }
 }
 
@@ -346,7 +411,7 @@ function handlePhoto(e) {
             compressedPhoto = canvas.toDataURL('image/jpeg', 0.8);
 
             const preview = document.getElementById('photoPreview');
-            preview.innerHTML = `<img src="${compressedPhoto}" alt="Preview" style="max-width: 100%; border-radius: 12px;">`;
+            preview.innerHTML = `<img src="${compressedPhoto}" alt="Preview" style="max-width: 100%;">`;
         };
         img.src = event.target.result;
     };
@@ -369,7 +434,9 @@ function saveCheckin() {
     };
 
     Storage.saveCheckin(checkin);
-    Cards.show('map');
+    CardStack.currentIndex = 0;
+    CardStack.updatePositions();
+    CardStack.initCard(0);
 }
 
 // Historial
@@ -433,7 +500,7 @@ function renderHistory(checkins) {
     document.querySelectorAll('.delete-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const id = parseInt(e.target.dataset.id);
-            if (confirm('¿Eliminar este check-in?')) {
+            if (confirm('¿Eliminar?')) {
                 Storage.deleteCheckin(id);
                 loadHistory();
             }
@@ -470,7 +537,6 @@ function loadStats() {
 
 function loadTopPlaces(checkins) {
     const placeCounts = {};
-
     checkins.forEach(checkin => {
         const placeName = checkin.place ? checkin.place.name : 'Ubicación GPS';
         placeCounts[placeName] = (placeCounts[placeName] || 0) + 1;
@@ -497,7 +563,6 @@ function loadTopPlaces(checkins) {
 
 function loadMonthlyStats(checkins) {
     const monthlyCounts = {};
-
     checkins.forEach(checkin => {
         const date = new Date(checkin.timestamp);
         const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
@@ -600,8 +665,8 @@ function loadHeatMap(checkins) {
     }, 100);
 }
 
-// Exportar
-function initExport() {
+// Settings
+function initSettings() {
     document.getElementById('exportCSV').onclick = () => Export.toCSV();
     document.getElementById('exportICal').onclick = () => Export.toICal();
     document.getElementById('exportJSON').onclick = () => Export.toJSON();
@@ -618,12 +683,14 @@ function initExport() {
         reader.onload = (event) => {
             try {
                 const data = JSON.parse(event.target.result);
-                if (confirm('¿Reemplazar todos los datos actuales?')) {
+                if (confirm('¿Reemplazar datos?')) {
                     if (Storage.importData(data)) {
                         alert('Datos importados');
-                        Cards.show('map');
+                        CardStack.currentIndex = 0;
+                        CardStack.updatePositions();
+                        CardStack.initCard(0);
                     } else {
-                        alert('Error en el archivo');
+                        alert('Error');
                     }
                 }
             } catch (error) {
@@ -634,11 +701,13 @@ function initExport() {
     };
 
     document.getElementById('clearAll').onclick = () => {
-        if (confirm('¿ELIMINAR TODOS los check-ins?')) {
+        if (confirm('¿ELIMINAR TODO?')) {
             if (confirm('Última confirmación')) {
                 Storage.clearAll();
-                alert('Datos eliminados');
-                Cards.show('map');
+                alert('Eliminado');
+                CardStack.currentIndex = 0;
+                CardStack.updatePositions();
+                CardStack.initCard(0);
             }
         }
     };
