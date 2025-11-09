@@ -10,24 +10,37 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
-    <!-- Stack de tarjetas -->
+    <!-- Stack de tarjetas apiladas -->
     <div id="cardStack">
         
-        <!-- TARJETA: Mapa Principal -->
-        <div class="card active" id="cardMap" data-card="map">
+        <!-- TARJETA 1: Mapa Principal -->
+        <div class="card" data-index="0" data-card="map">
             <div class="card-header">
                 <h1>Yeah¡</h1>
+                <div class="card-indicator">
+                    <span class="dot active"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                </div>
             </div>
             <div class="card-content">
                 <div id="map" class="map-full"></div>
             </div>
         </div>
 
-        <!-- TARJETA: Nuevo Check-in -->
-        <div class="card" id="cardCheckin" data-card="checkin">
+        <!-- TARJETA 2: Nuevo Check-in -->
+        <div class="card" data-index="1" data-card="checkin">
             <div class="card-header">
-                <button class="back-btn" onclick="Cards.show('map')">←</button>
-                <h1>Nuevo Check-in</h1>
+                <h1>Nuevo Yeah¡</h1>
+                <div class="card-indicator">
+                    <span class="dot"></span>
+                    <span class="dot active"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                </div>
             </div>
             <div class="card-content">
                 <div id="locationStatus" class="status-message">
@@ -67,11 +80,17 @@
             </div>
         </div>
 
-        <!-- TARJETA: Historial -->
-        <div class="card" id="cardHistory" data-card="history">
+        <!-- TARJETA 3: Historial -->
+        <div class="card" data-index="2" data-card="history">
             <div class="card-header">
-                <button class="back-btn" onclick="Cards.show('map')">←</button>
                 <h1>Historial</h1>
+                <div class="card-indicator">
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot active"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                </div>
             </div>
             <div class="card-content">
                 <div class="filter-section">
@@ -86,16 +105,22 @@
 
                 <div id="emptyState" class="empty-state" style="display: none;">
                     <p>No hay check-ins todavía</p>
-                    <button class="btn-primary" onclick="Cards.show('checkin')">Hacer primer check-in</button>
+                    <p class="hint">Desliza a la tarjeta anterior para crear uno</p>
                 </div>
             </div>
         </div>
 
-        <!-- TARJETA: Estadísticas -->
-        <div class="card" id="cardStats" data-card="stats">
+        <!-- TARJETA 4: Estadísticas -->
+        <div class="card" data-index="3" data-card="stats">
             <div class="card-header">
-                <button class="back-btn" onclick="Cards.show('map')">←</button>
                 <h1>Estadísticas</h1>
+                <div class="card-indicator">
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot active"></span>
+                    <span class="dot"></span>
+                </div>
             </div>
             <div class="card-content">
                 <div class="stats-grid">
@@ -139,11 +164,17 @@
             </div>
         </div>
 
-        <!-- TARJETA: Exportar -->
-        <div class="card" id="cardExport" data-card="export">
+        <!-- TARJETA 5: Settings -->
+        <div class="card" data-index="4" data-card="settings">
             <div class="card-header">
-                <button class="back-btn" onclick="Cards.show('map')">←</button>
-                <h1>Exportar</h1>
+                <h1>Settings</h1>
+                <div class="card-indicator">
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot active"></span>
+                </div>
             </div>
             <div class="card-content">
                 <div class="export-section">
@@ -182,20 +213,9 @@
 
     </div>
 
-    <!-- Wave Launcher -->
-    <div id="waveLauncher">
-        <div class="wave-btn" data-action="checkin" title="Check-in">
-            <span>+</span>
-        </div>
-        <div class="wave-btn" data-action="history" title="Historial">
-            <span>📋</span>
-        </div>
-        <div class="wave-btn" data-action="stats" title="Stats">
-            <span>📊</span>
-        </div>
-        <div class="wave-btn" data-action="export" title="Export">
-            <span>💾</span>
-        </div>
+    <!-- Indicador de swipe -->
+    <div id="swipeHint" class="swipe-hint">
+        <span>← Desliza →</span>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
