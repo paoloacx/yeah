@@ -10,10 +10,10 @@ function showToast(msg, type = 'normal') {
     toast.className = `toast ${type}`;
     toast.textContent = msg;
     container.appendChild(toast);
+
     setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transform = 'translateY(-10px)';
-        setTimeout(() => toast.remove(), 300);
+        toast.classList.add('hiding');
+        toast.addEventListener('animationend', () => toast.remove());
     }, 3000);
 }
 
@@ -109,7 +109,7 @@ function initMainMap() {
     if (mainMap) return;
     navigator.geolocation.getCurrentPosition(
         p => createMain(p.coords.latitude, p.coords.longitude),
-        () => createMain(40.4168, -3.7038)
+        () => createMain(40.4168, -3.7038) // Madrid por defecto
     );
 }
 function createMain(lat, lng) {
@@ -205,36 +205,87 @@ function loadHistory() {
     const all = Storage.getAllCheckins().sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
     document.getElementById('emptyState').style.display = all.length ? 'none' : 'block';
     list.style.display = all.length ? 'block' : 'none';
+    
+    // Formateador para fechas
+    const dateFormatter = new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+    const timeFormatter = new Intl.DateTimeFormat('es-ES', { hour: '2-digit', minute: '2-digit' });
+
     list.innerHTML = all.map(c => `
         <div class="checkin-item">
-            <div style="display:flex;justify-content:space-between">
-                <strong>${new Date(c.timestamp).toLocaleDateString()}</strong>
-                <small>${new Date(c.timestamp).toLocaleTimeString().slice(0,5)}</small>
-            </div>
-            ${c.note ? `<p style="margin:0.5rem 0;font-style:italic">"${c.note}"</p>` : ''}
+            <span class="date-time">
+                ${dateFormatter.format(new Date(c.timestamp))}, ${timeFormatter.format(new Date(c.timestamp))}
+            </span>
+            ${c.note ? `<p class="note-text">${c.note}</p>` : ''}
+            <span class="location-coords">
+                ${c.location.lat.toFixed(6)}, ${c.location.lng.toFixed(6)}
+            </span>
             <div class="checkin-actions">
-                <button class="btn-icon" onclick="editCheckin(${c.id})">✏️</button>
-                <button class="btn-icon" onclick="deleteCheckin(${c.id})" style="color:var(--danger-color)">🗑️</button>
+                <button class="btn-icon edit" onclick="editCheckin(${c.id})">✏️</button>
+                <button class="btn-icon delete" onclick="deleteCheckin(${c.id})">🗑️</button>
             </div>
         </div>
     `).join('');
 }
 
-// ESTADÍSTICAS RESTAURADAS
+// ESTADÍSTICAS COMPLETAS (Restaurado stats.html)
 function loadStats() {
-    const all = Storage.getAllCheckins();
-    // Aseguramos que los elementos existen antes de escribir en ellos
-    const elTotal = document.getElementById('statTotal');
-    const elPlaces = document.getElementById('statPlaces');
-    const elNotes = document.getElementById('statNotes');
-    // Placeholder para fotos si lo volvemos a activar
-    const elPhotos = document.getElementById('statPhotos'); 
+    const allCheckins = Storage.getAllCheckins();
 
-    if (elTotal) elTotal.textContent = all.length;
-    if (elPlaces) {
-        const unique = new Set(all.map(c => `${c.location.lat.toFixed(3)},${c.location.lng.toFixed(3)}`));
-        elPlaces.textContent = unique.size;
+    // Totales
+    document.getElementById('statTotal').textContent = allCheckins.length;
+    const uniquePlaces = new Set(allCheckins.map(c => `${c.location.lat.toFixed(3)},${c.location.lng.toFixed(3)}`));
+    document.getElementById('statPlaces').textContent = uniquePlaces.size;
+    document.getElementById('statNotes').textContent = allCheckins.filter(c => c.note && c.note.trim().length > 0).length;
+    document.getElementById('statPhotos').textContent = allCheckins.filter(c => c.photo).length; // Asumiendo que 'photo' existe si se añade
+
+    // Lugares más visitados
+    const locationCounts = {};
+    allCheckins.forEach(c => {
+        const key = `${c.location.lat.toFixed(3)},${c.location.lng.toFixed(3)}`;
+        locationCounts[key] = (locationCounts[key] || 0) + 1;
+    });
+    const sortedLocations = Object.entries(locationCounts)
+        .sort(([,countA], [,countB]) => countB - countA)
+        .slice(0, 5); // Top 5
+
+    const mostVisitedList = document.getElementById('mostVisitedList');
+    if (mostVisitedList) {
+        if (sortedLocations.length > 0) {
+            mostVisitedList.innerHTML = sortedLocations.map(([coords, count]) => `
+                <div style="display:flex; justify-content:space-between; padding:0.5rem 0; border-bottom:1px solid rgba(0,0,0,0.02);">
+                    <span>${coords}</span>
+                    <span>${count} veces</span>
+                </div>
+            `).join('');
+        } else {
+            mostVisitedList.innerHTML = '<p class="empty-state-stats">No hay datos de lugares visitados.</p>';
+        }
     }
-    if (elNotes) elNotes.textContent = all.filter(c => c.note && c.note.trim().length > 0).length;
-    if (elPhotos) elPhotos.textContent = all.filter(c => c.photo).length;
+
+    // Check-ins por mes
+    const checkinsPerMonth = {};
+    allCheckins.forEach(c => {
+        const date = new Date(c.timestamp);
+        const monthYear = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+        checkinsPerMonth[monthYear] = (checkinsPerMonth[monthYear] || 0) + 1;
+    });
+
+    const sortedMonths = Object.entries(checkinsPerMonth).sort(([a,],[b,]) => a.localeCompare(b));
+    const checkinsPerMonthList = document.getElementById('checkinsPerMonthList');
+    if (checkinsPerMonthList) {
+        if (sortedMonths.length > 0) {
+            checkinsPerMonthList.innerHTML = sortedMonths.map(([monthYear, count]) => {
+                const [year, month] = monthYear.split('-');
+                const monthName = new Date(year, month - 1, 1).toLocaleString('es-ES', { month: 'long' });
+                return `
+                    <div style="display:flex; justify-content:space-between; padding:0.5rem 0; border-bottom:1px solid rgba(0,0,0,0.02);">
+                        <span>${monthName} ${year}</span>
+                        <span>${count} check-ins</span>
+                    </div>
+                `;
+            }).join('');
+        } else {
+            checkinsPerMonthList.innerHTML = '<p class="empty-state-stats">No hay datos por mes.</p>';
+        }
+    }
 }
