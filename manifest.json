@@ -2,10 +2,11 @@
   "name": "Yeah¡",
   "short_name": "Yeah¡",
   "description": "Registra todos los lugares donde has estado",
-  "start_url": "/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#4CAF50",
+  "background_color": "#1a1a1a",
+  "theme_color": "#1a1a1a",
   "orientation": "portrait",
   "icons": [
     {
