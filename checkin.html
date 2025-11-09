@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#4CAF50">
-    <title>Nuevo Check-in - Yeah!</title>
+    <title>Nuevo Check-in - Yeah¡</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
@@ -31,7 +31,10 @@
 
             <div class="form-section">
                 <label for="placeSearch">Buscar lugar (opcional)</label>
-                <input type="text" id="placeSearch" placeholder="Buscar tienda, restaurante...">
+                <div style="display: flex; gap: 0.5rem;">
+                    <input type="text" id="placeSearch" placeholder="Buscar tienda, restaurante..." style="flex: 1;">
+                    <button type="button" id="searchBtn" class="btn-search">Buscar</button>
+                </div>
                 <div id="placeResults" class="place-results"></div>
                 <p class="hint">Deja vacío para guardar solo coordenadas GPS</p>
             </div>
@@ -179,64 +182,67 @@
             }
         }
 
-        // Búsqueda manual de lugares
-        let searchTimeout;
-        document.getElementById('placeSearch').addEventListener('input', async (e) => {
-            const query = e.target.value.trim();
+        // Búsqueda manual de lugares con botón
+        document.getElementById('searchBtn').addEventListener('click', async () => {
+            const query = document.getElementById('placeSearch').value.trim();
             const resultsDiv = document.getElementById('placeResults');
             
             if (query.length < 3) {
-                if (!currentPosition) return;
-                searchNearbyPlaces(currentPosition.lat, currentPosition.lng);
+                resultsDiv.innerHTML = '<p class="hint">Escribe al menos 3 caracteres</p>';
                 return;
             }
             
-            clearTimeout(searchTimeout);
             resultsDiv.innerHTML = '<p class="hint">Buscando...</p>';
             
-            searchTimeout = setTimeout(async () => {
-                try {
-                    // Buscar cerca de la ubicación actual si existe
-                    let searchUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=10`;
-                    if (currentPosition) {
-                        searchUrl += `&lat=${currentPosition.lat}&lon=${currentPosition.lng}&bounded=1&viewbox=${currentPosition.lng-0.01},${currentPosition.lat-0.01},${currentPosition.lng+0.01},${currentPosition.lat+0.01}`;
-                    }
-                    
-                    const response = await fetch(searchUrl, {
-                        headers: { 'User-Agent': 'YeahApp/1.0' }
-                    });
-                    const data = await response.json();
-                    
-                    if (data.length === 0) {
-                        resultsDiv.innerHTML = '<p class="hint">No se encontraron resultados</p>';
-                        return;
-                    }
-                    
-                    resultsDiv.innerHTML = data.map(place => `
-                        <div class="place-item" data-place='${JSON.stringify({
-                            name: place.display_name,
-                            lat: place.lat,
-                            lng: place.lon,
-                            type: place.type
-                        })}'>
-                            ${place.display_name}
-                        </div>
-                    `).join('');
-                    
-                    // Event listeners para seleccionar lugar
-                    document.querySelectorAll('.place-item').forEach(item => {
-                        item.addEventListener('click', (e) => {
-                            document.querySelectorAll('.place-item').forEach(p => p.classList.remove('selected'));
-                            e.currentTarget.classList.add('selected');
-                            selectedPlace = JSON.parse(e.currentTarget.dataset.place);
-                        });
-                    });
-                    
-                } catch (error) {
-                    console.error('Error en búsqueda:', error);
-                    resultsDiv.innerHTML = '<p class="hint">Error al buscar. Intenta de nuevo.</p>';
+            try {
+                // Buscar cerca de la ubicación actual si existe
+                let searchUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=10`;
+                if (currentPosition) {
+                    searchUrl += `&lat=${currentPosition.lat}&lon=${currentPosition.lng}&bounded=1&viewbox=${currentPosition.lng-0.01},${currentPosition.lat-0.01},${currentPosition.lng+0.01},${currentPosition.lat+0.01}`;
                 }
-            }, 500); // Esperar 500ms después de que el usuario deje de escribir
+                
+                const response = await fetch(searchUrl, {
+                    headers: { 'User-Agent': 'YeahApp/1.0' }
+                });
+                const data = await response.json();
+                
+                if (data.length === 0) {
+                    resultsDiv.innerHTML = '<p class="hint">No se encontraron resultados</p>';
+                    return;
+                }
+                
+                resultsDiv.innerHTML = data.map(place => `
+                    <div class="place-item" data-place='${JSON.stringify({
+                        name: place.display_name,
+                        lat: place.lat,
+                        lng: place.lon,
+                        type: place.type
+                    })}'>
+                        ${place.display_name}
+                    </div>
+                `).join('');
+                
+                // Event listeners para seleccionar lugar
+                document.querySelectorAll('.place-item').forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        document.querySelectorAll('.place-item').forEach(p => p.classList.remove('selected'));
+                        e.currentTarget.classList.add('selected');
+                        selectedPlace = JSON.parse(e.currentTarget.dataset.place);
+                    });
+                });
+                
+            } catch (error) {
+                console.error('Error en búsqueda:', error);
+                resultsDiv.innerHTML = '<p class="hint">Error al buscar. Intenta de nuevo.</p>';
+            }
+        });
+
+        // Permitir buscar con Enter
+        document.getElementById('placeSearch').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                document.getElementById('searchBtn').click();
+            }
         });
 
         // Manejo de foto
