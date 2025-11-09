@@ -18,9 +18,6 @@ function initApp() {
             loadCheckinsOnMap();
         });
 
-    // Cargar estadísticas
-    updateStats();
-
     // Botón de check-in
     document.getElementById('checkinBtn').addEventListener('click', () => {
         window.location.href = 'checkin.html';
@@ -37,18 +34,9 @@ function loadCheckinsOnMap() {
     }
 }
 
-function updateStats() {
-    const stats = Storage.getStats();
-    document.getElementById('totalCheckins').textContent = stats.total;
-    document.getElementById('uniquePlaces').textContent = stats.uniquePlaces;
-}
-
-// Recargar stats cuando la página vuelve a estar visible
+// Recargar mapa cuando la página vuelve a estar visible
 document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) {
-        updateStats();
-        if (mainMap) {
-            loadCheckinsOnMap();
-        }
+    if (!document.hidden && mainMap) {
+        loadCheckinsOnMap();
     }
 });
