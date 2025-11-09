@@ -4,8 +4,12 @@ const CardStack = {
     cards: [],
     totalCards: 5,
     isDragging: false,
+    isScrolling: false,
+    hasMoved: false,
     startX: 0,
+    startY: 0,
     currentX: 0,
+    currentY: 0,
     dragThreshold: 100,
 
     init() {
@@ -36,73 +40,106 @@ const CardStack = {
         stack.addEventListener('mousemove', (e) => this.handleDragMove(e));
         stack.addEventListener('mouseup', (e) => this.handleDragEnd(e));
         stack.addEventListener('mouseleave', (e) => this.handleDragEnd(e));
-
-        // Prevenir scroll mientras se arrastra
-        stack.addEventListener('touchmove', (e) => {
-            if (this.isDragging) {
-                e.preventDefault();
-            }
-        }, { passive: false });
     },
 
     handleDragStart(e) {
         const activeCard = this.cards[this.currentIndex];
         if (!activeCard) return;
 
-        // Solo permitir drag en la tarjeta activa
-        const touch = e.touches ? e.touches[0] : e;
-        this.startX = touch.clientX;
-        this.isDragging = true;
-        activeCard.classList.add('dragging');
-    },
-
-    handleDragMove(e) {
-        if (!this.isDragging) return;
-
-        const touch = e.touches ? e.touches[0] : e;
-        this.currentX = touch.clientX;
-        const diff = this.currentX - this.startX;
-
-        const activeCard = this.cards[this.currentIndex];
-        if (!activeCard) return;
-
-        // Aplicar transformación durante el arrastre
-        const progress = Math.min(Math.abs(diff) / this.dragThreshold, 1);
-        const direction = diff > 0 ? 1 : -1;
-
-        activeCard.style.transform = `translateX(${diff}px) scale(${1 - progress * 0.1}) rotateY(${direction * progress * 5}deg)`;
-        activeCard.style.opacity = 1 - progress * 0.3;
-    },
-
-    handleDragEnd(e) {
-        if (!this.isDragging) return;
-
-        const diff = this.currentX - this.startX;
-        const activeCard = this.cards[this.currentIndex];
-        
-        if (!activeCard) {
-            this.isDragging = false;
+        // Ignorar si el click es en un elemento interactivo
+        const target = e.target;
+        if (target.tagName === 'BUTTON' || 
+            target.tagName === 'INPUT' || 
+            target.tagName === 'TEXTAREA' ||
+            target.tagName === 'SELECT' ||
+            target.closest('button') ||
+            target.closest('input') ||
+            target.closest('textarea')) {
             return;
         }
 
-        activeCard.classList.remove('dragging');
-        activeCard.style.transform = '';
-        activeCard.style.opacity = '';
+        const touch = e.touches ? e.touches[0] : e;
+        this.startX = touch.clientX;
+        this.startY = touch.clientY;
+        this.isDragging = false; // No activar hasta mover
+        this.hasMoved = false;
+    },
 
-        // Determinar si el swipe fue suficiente
-        if (Math.abs(diff) > this.dragThreshold) {
-            if (diff < 0) {
-                // Swipe izquierda - siguiente tarjeta (con circular)
-                this.next();
-            } else if (diff > 0) {
-                // Swipe derecha - tarjeta anterior (con circular)
-                this.prev();
+    handleDragMove(e) {
+        if (this.startX === 0) return;
+
+        const touch = e.touches ? e.touches[0] : e;
+        this.currentX = touch.clientX;
+        this.currentY = touch.clientY;
+        
+        const diffX = this.currentX - this.startX;
+        const diffY = this.currentY - this.startY;
+
+        // Determinar dirección del gesto
+        if (!this.hasMoved && (Math.abs(diffX) > 10 || Math.abs(diffY) > 10)) {
+            this.hasMoved = true;
+            
+            // Si el movimiento es más vertical que horizontal, es scroll
+            if (Math.abs(diffY) > Math.abs(diffX)) {
+                this.isScrolling = true;
+                return;
+            } else {
+                // Es swipe horizontal
+                this.isDragging = true;
+                this.isScrolling = false;
+                const activeCard = this.cards[this.currentIndex];
+                if (activeCard) {
+                    activeCard.classList.add('dragging');
+                }
             }
         }
 
+        // Si es scroll vertical, no hacer nada
+        if (this.isScrolling) return;
+
+        // Si es swipe horizontal, aplicar transformación
+        if (this.isDragging) {
+            e.preventDefault(); // Solo prevenir si es swipe horizontal
+            
+            const activeCard = this.cards[this.currentIndex];
+            if (!activeCard) return;
+
+            const progress = Math.min(Math.abs(diffX) / this.dragThreshold, 1);
+            const direction = diffX > 0 ? 1 : -1;
+
+            activeCard.style.transform = `translateX(${diffX}px) scale(${1 - progress * 0.1}) rotateY(${direction * progress * 5}deg)`;
+            activeCard.style.opacity = 1 - progress * 0.3;
+        }
+    },
+
+    handleDragEnd(e) {
+        const activeCard = this.cards[this.currentIndex];
+        
+        if (activeCard && this.isDragging) {
+            const diff = this.currentX - this.startX;
+            
+            activeCard.classList.remove('dragging');
+            activeCard.style.transform = '';
+            activeCard.style.opacity = '';
+
+            // Solo cambiar tarjeta si el swipe fue suficiente
+            if (Math.abs(diff) > this.dragThreshold) {
+                if (diff < 0) {
+                    this.next();
+                } else if (diff > 0) {
+                    this.prev();
+                }
+            }
+        }
+
+        // Reset
         this.isDragging = false;
+        this.isScrolling = false;
+        this.hasMoved = false;
         this.startX = 0;
+        this.startY = 0;
         this.currentX = 0;
+        this.currentY = 0;
     },
 
     next() {
@@ -205,6 +242,7 @@ function loadCheckinsOnMap() {
 
 // Check-in
 function initCheckin() {
+    editingCheckinId = null;
     currentPosition = null;
     selectedPlace = null;
     compressedPhoto = null;
@@ -428,16 +466,34 @@ function saveCheckin() {
         return;
     }
 
-    const checkin = {
-        id: Date.now(),
-        timestamp: new Date().toISOString(),
-        location: currentPosition,
-        place: selectedPlace,
-        note: document.getElementById('placeNote').value.trim(),
-        photo: compressedPhoto
-    };
+    if (editingCheckinId) {
+        // Actualizar check-in existente
+        const updatedCheckin = {
+            id: editingCheckinId,
+            timestamp: Storage.getCheckin(editingCheckinId).timestamp, // Mantener timestamp original
+            location: currentPosition,
+            place: selectedPlace,
+            note: document.getElementById('placeNote').value.trim(),
+            photo: compressedPhoto
+        };
+        Storage.updateCheckin(editingCheckinId, updatedCheckin);
+        editingCheckinId = null;
+    } else {
+        // Crear nuevo check-in
+        const checkin = {
+            id: Date.now(),
+            timestamp: new Date().toISOString(),
+            location: currentPosition,
+            place: selectedPlace,
+            note: document.getElementById('placeNote').value.trim(),
+            photo: compressedPhoto
+        };
+        Storage.saveCheckin(checkin);
+    }
 
-    Storage.saveCheckin(checkin);
+    // Resetear botón
+    document.getElementById('saveCheckin').textContent = 'Guardar Check-in';
+
     CardStack.currentIndex = 0;
     CardStack.updatePositions();
     CardStack.initCard(0);
@@ -496,6 +552,7 @@ function renderHistory(checkins) {
                 </div>
             </div>
             <div class="checkin-actions">
+                <button class="btn-icon edit-btn" data-id="${checkin.id}">✏️</button>
                 <button class="btn-icon delete-btn" data-id="${checkin.id}">🗑️</button>
             </div>
         </div>
@@ -510,6 +567,51 @@ function renderHistory(checkins) {
             }
         });
     });
+
+    document.querySelectorAll('.edit-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const id = parseInt(e.target.dataset.id);
+            editCheckin(id);
+        });
+    });
+}
+
+let editingCheckinId = null;
+
+function editCheckin(id) {
+    const checkin = Storage.getCheckin(id);
+    if (!checkin) return;
+
+    editingCheckinId = id;
+    currentPosition = checkin.location;
+    selectedPlace = checkin.place;
+    compressedPhoto = checkin.photo;
+
+    // Cambiar a tarjeta de check-in
+    CardStack.currentIndex = 1;
+    CardStack.updatePositions();
+
+    // Esperar a que se cargue la tarjeta
+    setTimeout(() => {
+        document.getElementById('currentLocation').textContent = `${currentPosition.lat.toFixed(6)}, ${currentPosition.lng.toFixed(6)}`;
+        document.getElementById('placeNote').value = checkin.note || '';
+        
+        if (checkin.photo) {
+            document.getElementById('photoPreview').innerHTML = `<img src="${checkin.photo}" alt="Preview" style="max-width: 100%;">`;
+        }
+
+        document.getElementById('locationStatus').textContent = 'Editando check-in';
+        document.getElementById('locationStatus').classList.add('success');
+
+        if (checkinMap) {
+            checkinMap.remove();
+        }
+        checkinMap = Maps.createMap('mapPreview', currentPosition.lat, currentPosition.lng, 16);
+        Maps.addMarker(checkinMap, currentPosition.lat, currentPosition.lng);
+
+        // Cambiar texto del botón
+        document.getElementById('saveCheckin').textContent = 'Actualizar Check-in';
+    }, 300);
 }
 
 function formatDate(isoString) {
@@ -687,14 +789,26 @@ function initSettings() {
         reader.onload = (event) => {
             try {
                 const data = JSON.parse(event.target.result);
-                if (confirm('¿Reemplazar datos?')) {
-                    if (Storage.importData(data)) {
-                        alert('Datos importados');
+                if (confirm('¿Combinar estos datos con los actuales?')) {
+                    if (data.checkins && Array.isArray(data.checkins)) {
+                        const existing = Storage.getAllCheckins();
+                        const existingIds = new Set(existing.map(c => c.id));
+                        
+                        // Añadir solo check-ins nuevos (que no existan ya)
+                        let addedCount = 0;
+                        data.checkins.forEach(checkin => {
+                            if (!existingIds.has(checkin.id)) {
+                                Storage.saveCheckin(checkin);
+                                addedCount++;
+                            }
+                        });
+                        
+                        alert(`${addedCount} check-ins nuevos importados`);
                         CardStack.currentIndex = 0;
                         CardStack.updatePositions();
                         CardStack.initCard(0);
                     } else {
-                        alert('Error');
+                        alert('Error en formato');
                     }
                 }
             } catch (error) {
@@ -702,17 +816,5 @@ function initSettings() {
             }
         };
         reader.readAsText(file);
-    };
-
-    document.getElementById('clearAll').onclick = () => {
-        if (confirm('¿ELIMINAR TODO?')) {
-            if (confirm('Última confirmación')) {
-                Storage.clearAll();
-                alert('Eliminado');
-                CardStack.currentIndex = 0;
-                CardStack.updatePositions();
-                CardStack.initCard(0);
-            }
-        }
     };
 }
