@@ -3,149 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#1a1a1a">
+    <meta name="theme-color" content="#121212">
     <title>Yeah¡</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
-    <!-- Fondo SVG -->
     <div id="background">
         <svg width="100%" height="100%" viewBox="0 0 1200 2000" xmlns="http://www.w3.org/2000/svg">
             <defs>
-                <!-- Radial glow -->
                 <radialGradient id="glow" cx="50%" cy="65%" r="60%">
                     <stop offset="0%" stop-color="#4e6aff" stop-opacity="0.22" />
                     <stop offset="60%" stop-color="#1b2336" stop-opacity="0.35" />
                     <stop offset="100%" stop-color="#0c0f13" stop-opacity="1" />
                 </radialGradient>
-                <!-- Grain texture -->
                 <filter id="grain">
                     <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" stitchTiles="stitch"/>
                     <feColorMatrix type="saturate" values="0"/>
-                    <feComponentTransfer>
-                        <feFuncA type="linear" slope="0.07"/>
-                    </feComponentTransfer>
+                    <feComponentTransfer><feFuncA type="linear" slope="0.07"/></feComponentTransfer>
                 </filter>
             </defs>
-            <!-- Base -->
             <rect width="100%" height="100%" fill="url(#glow)" />
-            <!-- Grain -->
             <rect width="100%" height="100%" filter="url(#grain)" />
         </svg>
     </div>
 
-    <!-- Stack de tarjetas apiladas -->
     <div id="cardStack">
         
-        <!-- TARJETA 1: Mapa Principal -->
-        <div class="card" data-index="0" data-card="map">
+        <div class="card" data-position="0" data-card="map">
             <div class="card-header">
                 <h1>Yeah¡</h1>
                 <div class="card-indicator">
-                    <span class="dot active"></span>
-                    <span class="dot"></span>
-                    <span class="dot"></span>
-                    <span class="dot"></span>
-                    <span class="dot"></span>
+                    <span class="dot active"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
                 </div>
             </div>
-            <div class="card-content">
-                <div id="map" class="map-full"></div>
+            <div class="card-content" style="padding:0">
+                <div id="map" class="map-full" style="border-radius:0 0 32px 32px"></div>
             </div>
         </div>
 
-        <!-- TARJETA 2: Nuevo Check-in -->
-        <div class="card" data-index="1" data-card="checkin">
+        <div class="card" data-position="1" data-card="checkin">
             <div class="card-header">
                 <h1 id="cardTitleCheckin">Nuevo Yeah¡</h1>
                 <div class="card-indicator">
-                    <span class="dot"></span>
-                    <span class="dot active"></span>
-                    <span class="dot"></span>
-                    <span class="dot"></span>
-                    <span class="dot"></span>
+                    <span class="dot"></span><span class="dot active"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
                 </div>
             </div>
             <div class="card-content">
-                <div id="locationStatus" class="status-message">
-                    Obteniendo ubicación...
-                </div>
-
+                <div id="locationStatus" class="status-message">Buscando señal GPS...</div>
                 <div id="mapPreview" class="map-preview"></div>
-
                 <div class="form-section">
-                    <label>Ubicación GPS</label>
-                    <div id="currentLocation" class="location-display">
-                        Cargando...
-                    </div>
+                    <label>Ubicación</label>
+                    <div id="currentLocation" style="font-family:monospace;opacity:0.7;margin-bottom:1rem">...</div>
                 </div>
-
-                <div class="form-section">
-                    <label for="placeSearch">Buscar lugar (opcional)</label>
-                    <div style="display: flex; gap: 0.5rem;">
-                        <input type="text" id="placeSearch" placeholder="Escribe y pulsa Buscar...">
-                        <button type="button" id="searchBtn" class="btn-search">Buscar</button>
-                    </div>
-                    <div id="placeResults" class="place-results"></div>
-                </div>
-
                 <div class="form-section">
                     <label for="placeNote">Nota (opcional)</label>
-                    <textarea id="placeNote" rows="3" placeholder="¿Qué hiciste aquí?"></textarea>
+                    <textarea id="placeNote" rows="3" placeholder="¿Qué estás haciendo aquí?"></textarea>
                 </div>
-
-                <div class="form-section">
-                    <label for="placePhoto">Foto (opcional)</label>
-                    <input type="file" id="placePhoto" accept="image/*" capture="environment">
-                    <div id="photoPreview"></div>
-                </div>
-
-                <button id="saveCheckin" class="btn-primary">Guardar Check-in</button>
+                <button id="saveCheckin" class="btn-primary">Guardar Yeah¡</button>
             </div>
         </div>
 
-        <!-- TARJETA 3: Historial -->
-        <div class="card" data-index="2" data-card="history">
+        <div class="card" data-position="2" data-card="history">
             <div class="card-header">
                 <h1>Historial</h1>
                 <div class="card-indicator">
-                    <span class="dot"></span>
-                    <span class="dot"></span>
-                    <span class="dot active"></span>
-                    <span class="dot"></span>
-                    <span class="dot"></span>
+                    <span class="dot"></span><span class="dot"></span><span class="dot active"></span><span class="dot"></span><span class="dot"></span>
                 </div>
             </div>
             <div class="card-content">
-                <div class="filter-section">
-                    <input type="text" id="searchFilter" placeholder="Buscar...">
-                    <select id="sortFilter">
-                        <option value="newest">Recientes</option>
-                        <option value="oldest">Antiguos</option>
-                    </select>
-                </div>
-
                 <div id="checkinsList" class="checkins-list"></div>
-
                 <div id="emptyState" class="empty-state" style="display: none;">
-                    <p>No hay check-ins todavía</p>
-                    <p class="hint">Desliza a la tarjeta anterior para crear uno</p>
+                    <p>Aún no has guardado ningún Yeah</p>
                 </div>
             </div>
         </div>
 
-        <!-- TARJETA 4: Estadísticas -->
-        <div class="card" data-index="3" data-card="stats">
+        <div class="card" data-position="3" data-card="stats">
             <div class="card-header">
                 <h1>Estadísticas</h1>
                 <div class="card-indicator">
-                    <span class="dot"></span>
-                    <span class="dot"></span>
-                    <span class="dot"></span>
-                    <span class="dot active"></span>
-                    <span class="dot"></span>
+                    <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot active"></span><span class="dot"></span>
                 </div>
             </div>
             <div class="card-content">
@@ -160,29 +99,25 @@
                     </div>
                     <div class="stat-card">
                         <div class="stat-number" id="statPhotos">0</div>
-                        <div class="stat-label">Con Fotos</div>
+                        <div class="stat-label">Fotos</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-number" id="statNotes">0</div>
-                        <div class="stat-label">Con Notas</div>
+                        <div class="stat-label">Notas</div>
                     </div>
                 </div>
-
                 <div class="stats-section">
                     <h2>Lugares más visitados</h2>
                     <div id="topPlaces" class="top-list"></div>
                 </div>
-
                 <div class="stats-section">
-                    <h2>Check-ins por mes</h2>
+                    <h2>Por mes</h2>
                     <div id="monthlyChart" class="chart"></div>
                 </div>
-
                 <div class="stats-section">
-                    <h2>Check-ins por día</h2>
+                    <h2>Por día de semana</h2>
                     <div id="weekdayChart" class="chart"></div>
                 </div>
-
                 <div class="stats-section">
                     <h2>Mapa de calor</h2>
                     <div id="heatMap" class="map-heat"></div>
@@ -190,55 +125,26 @@
             </div>
         </div>
 
-        <!-- TARJETA 5: Settings -->
-        <div class="card" data-index="4" data-card="settings">
+        <div class="card" data-position="4" data-card="settings">
             <div class="card-header">
-                <h1>Settings</h1>
+                <h1>Ajustes</h1>
                 <div class="card-indicator">
-                    <span class="dot"></span>
-                    <span class="dot"></span>
-                    <span class="dot"></span>
-                    <span class="dot"></span>
-                    <span class="dot active"></span>
+                    <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot active"></span>
                 </div>
             </div>
             <div class="card-content">
                 <div class="export-section">
-                    <h2>Exportar a CSV</h2>
-                    <p>Descarga en formato Excel</p>
-                    <button id="exportCSV" class="btn-primary">Descargar CSV</button>
-                </div>
-
-                <div class="export-section">
-                    <h2>Exportar a iCal</h2>
-                    <p>Importa en tu calendario</p>
-                    <button id="exportICal" class="btn-primary">Descargar iCal</button>
-                </div>
-
-                <div class="export-section">
-                    <h2>Backup JSON</h2>
-                    <p>Copia de seguridad completa</p>
-                    <button id="exportJSON" class="btn-primary">Descargar JSON</button>
-                </div>
-
-                <div class="export-section">
-                    <h2>Importar Backup</h2>
-                    <p>Combina con datos actuales</p>
-                    <input type="file" id="importFile" accept=".json" style="display: none;">
-                    <button id="importJSON" class="btn-primary">Importar JSON</button>
-                    <p class="hint" style="color: #666; margin-top: 0.5rem;">Los check-ins duplicados se ignorarán</p>
+                    <h2>Copia de Seguridad</h2>
+                    <p style="color:var(--text-secondary);margin-bottom:1rem">Guarda todos tus datos en un archivo JSON.</p>
+                    <button id="exportJSON" class="btn-primary">Descargar Datos</button>
                 </div>
             </div>
         </div>
 
     </div>
 
-    <!-- Indicador de swipe -->
-    <div id="swipeHint" class="swipe-hint">
-        <span>← Desliza →</span>
-    </div>
-
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
     <script src="js/storage.js"></script>
     <script src="js/maps.js"></script>
     <script src="js/export.js"></script>
