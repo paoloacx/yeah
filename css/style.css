@@ -30,7 +30,7 @@ body {
     position: fixed;
     inset: 0;
     z-index: -1;
-    background: #000;
+    background: #000; /* Fallback */
 }
 #background svg {
     width: 100%;
@@ -81,7 +81,7 @@ body {
     mix-blend-mode: multiply;
 }
 
-/* Posiciones de pila (Rail horizontal con profundidad) */
+/* Posiciones de pila */
 .card[data-position="0"] {
     z-index: 10;
     transform: translateX(0) scale(1);
@@ -150,6 +150,11 @@ body {
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     background: var(--card-bg);
+    /* Añadir algo de estilo para el scrollbar */
+    scrollbar-width: none; /* Firefox */
+}
+.card-content::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Edge */
 }
 
 /* UI Elements */
@@ -161,6 +166,11 @@ body {
     border: none; border-radius: 16px;
     font-size: 1.05rem; font-weight: 700;
     box-shadow: 0 8px 20px -6px rgba(76, 175, 80, 0.4);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.btn-primary:active {
+    transform: scale(0.97);
+    box-shadow: 0 4px 10px -4px rgba(76, 175, 80, 0.3);
 }
 
 input[type="text"], textarea, select {
@@ -169,6 +179,7 @@ input[type="text"], textarea, select {
     border-radius: 16px; font-size: 1rem;
     margin-bottom: 1rem; color: var(--text-primary);
     transition: all 0.2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05); /* Sombra suave */
 }
 input:focus, textarea:focus {
     background: #fff;
@@ -182,14 +193,27 @@ input:focus, textarea:focus {
     margin-bottom: 0.5rem; display: block;
     color: var(--text-secondary);
 }
+.status-message {
+    padding: 0.8rem 1rem;
+    background: #e0e0e0;
+    color: #444;
+    border-radius: 12px;
+    text-align: center;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
 
-/* Mapas y Listas */
+/* Mapas */
 .map-full, .map-preview, .map-heat {
     border-radius: 24px;
     background: #f0f0f0; /* Placeholder mientras carga */
+    flex: 1; /* Asegurar que el mapa de la card principal ocupe espacio */
+    min-height: 300px; /* Tamaño mínimo */
 }
 .map-preview { height: 200px; margin-bottom: 1.5rem; }
 
+/* HISTORIAL - ESTILO WEBOS CLEAN */
 .checkin-item {
     background: #fff;
     border-radius: 20px;
@@ -197,9 +221,63 @@ input:focus, textarea:focus {
     margin-bottom: 1rem;
     box-shadow: 0 8px 24px -6px rgba(0,0,0,0.08);
     border: 1px solid rgba(0,0,0,0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    transition: transform 0.2s ease;
 }
+.checkin-item:active {
+    transform: scale(0.99); /* Pequeña animación al pulsar */
+}
+.checkin-item .date-time {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    display: block;
+    margin-bottom: 0.25rem;
+}
+.checkin-item .note-text {
+    font-style: italic;
+    color: var(--text-primary);
+    font-size: 1.05rem;
+    font-weight: 500;
+}
+.checkin-item .location-coords {
+    font-family: monospace;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    opacity: 0.8;
+}
+.checkin-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(0,0,0,0.05);
+}
+.btn-icon {
+    background: #f0f0f0;
+    border: none;
+    color: var(--text-secondary);
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+.btn-icon:hover {
+    background: #e0e0e0;
+}
+.btn-icon:active {
+    transform: scale(0.95);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.btn-icon.edit { color: var(--primary-color); }
+.btn-icon.delete { color: var(--danger-color); }
 
-/* ESTADÍSTICAS FIXED */
+/* ESTADÍSTICAS */
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -211,12 +289,12 @@ input:focus, textarea:focus {
     padding: 1.5rem;
     border-radius: 24px;
     text-align: center;
-    display: flex;
-    flex-direction: column-reverse; /* Pone el número arriba del texto visualmente si usamos el orden correcto en HTML, o simplemente ajustamos aquí */
-    justify-content: center;
-    align-items: center;
-    min-height: 120px;
     border: 1px solid rgba(0,0,0,0.03);
+    box-shadow: 0 6px 18px -4px rgba(0,0,0,0.08);
+    transition: transform 0.2s ease;
+}
+.stat-card:active {
+    transform: scale(0.98);
 }
 .stat-number {
     font-size: 2.8rem;
@@ -230,22 +308,79 @@ input:focus, textarea:focus {
     font-weight: 600;
     color: var(--text-secondary);
 }
+.stat-section {
+    background: #f8f9fa;
+    border-radius: 24px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 6px 18px -4px rgba(0,0,0,0.08);
+}
+.stat-section h2 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+}
+.empty-state-stats {
+    color: var(--text-secondary);
+    font-style: italic;
+    text-align: center;
+}
 
-/* Toast */
+/* TOAST NOTIFICATIONS - Arriba */
 #toast-container {
-    position: fixed; bottom: 2rem; left: 50%;
-    transform: translateX(-50%); z-index: 1000;
-    width: 90%; max-width: 350px;
+    position: fixed;
+    top: 1rem; /* Arriba del todo */
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
     pointer-events: none;
+    width: 90%;
+    max-width: 300px; /* Un poco más estrechos */
 }
+
 .toast {
-    background: rgba(0, 0, 0, 0.85);
-    backdrop-filter: blur(8px);
-    color: white; padding: 1rem 1.5rem;
-    border-radius: 50px; text-align: center;
-    font-weight: 600; margin-top: 0.5rem;
-    animation: toastIn 0.3s ease forwards;
+    background: rgba(255, 255, 255, 0.95); /* Fondo blanco con blur */
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: var(--text-primary);
+    padding: 0.8rem 1.2rem;
+    border-radius: 12px; /* Más cuadrados que antes */
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2), 0 0 1px rgba(0,0,0,0.1); /* Sombra suave */
+    font-weight: 600;
+    text-align: center;
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+    animation: toastIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    border: 1px solid rgba(0,0,0,0.05); /* Borde sutil */
 }
-.toast.success { background: var(--primary-dark); }
-.toast.error { background: var(--danger-color); }
-@keyframes toastIn { from { opacity:0; transform: translateY(20px); } to { opacity:1; transform: translateY(0); } }
+.toast.success { 
+    color: var(--primary-dark); 
+    border-color: var(--primary-color);
+    background: rgba(232, 245, 233, 0.95); /* Verde suave */
+}
+.toast.error { 
+    color: var(--danger-color); 
+    border-color: var(--danger-color);
+    background: rgba(255, 235, 234, 0.95); /* Rojo suave */
+}
+.toast.hiding { animation: toastOut 0.3s ease forwards; }
+
+@keyframes toastIn {
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes toastOut {
+    to { opacity: 0; transform: translateY(-20px) scale(0.9); }
+}
+
+/* Empty State */
+.empty-state {
+    color: var(--text-secondary);
+    text-align: center;
+    padding: 2rem;
+    font-style: italic;
+    opacity: 0.8;
+}
