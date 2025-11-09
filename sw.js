@@ -1,16 +1,13 @@
-const CACHE_NAME = 'yeah-v1';
+const CACHE_NAME = 'yeah-v2';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/checkin.html',
-  '/history.html',
-  '/stats.html',
-  '/export.html',
-  '/css/style.css',
-  '/js/app.js',
-  '/js/storage.js',
-  '/js/maps.js',
-  '/js/export.js'
+  './',
+  './index.html',
+  './css/style.css',
+  './js/app.js',
+  './js/storage.js',
+  './js/maps.js',
+  './js/export.js',
+  './manifest.json'
 ];
 
 self.addEventListener('install', (event) => {
@@ -18,6 +15,7 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME)
       .then((cache) => cache.addAll(urlsToCache))
   );
+  self.skipWaiting();
 });
 
 self.addEventListener('fetch', (event) => {
@@ -26,10 +24,27 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Ignorar peticiones a APIs externas (Nominatim, Leaflet, etc)
+  if (event.request.url.includes('nominatim.openstreetmap.org') ||
+      event.request.url.includes('unpkg.com') ||
+      event.request.url.includes('tile.openstreetmap.org')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request)
-      .then((response) => response || fetch(event.request))
-      .catch(() => fetch(event.request))
+      .then((response) => {
+        if (response) {
+          return response;
+        }
+        return fetch(event.request).catch(() => {
+          // Si falla, devolver index.html para rutas de la app
+          if (event.request.mode === 'navigate') {
+            return caches.match('./index.html');
+          }
+        });
+      })
   );
 });
 
@@ -45,4 +60,5 @@ self.addEventListener('activate', (event) => {
       );
     })
   );
+  self.clients.claim();
 });
