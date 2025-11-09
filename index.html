@@ -2,36 +2,206 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#4CAF50">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1a1a1a">
     <title>Yeah¡</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Yeah¡</h1>
-            <nav>
-                <a href="history.html">Historial</a>
-                <a href="stats.html">Estadísticas</a>
-                <a href="export.html">Exportar</a>
-            </nav>
-        </header>
+    <!-- Stack de tarjetas -->
+    <div id="cardStack">
+        
+        <!-- TARJETA: Mapa Principal -->
+        <div class="card active" id="cardMap" data-card="map">
+            <div class="card-header">
+                <h1>Yeah¡</h1>
+            </div>
+            <div class="card-content">
+                <div id="map" class="map-full"></div>
+            </div>
+        </div>
 
-        <main>
-            <div id="map"></div>
+        <!-- TARJETA: Nuevo Check-in -->
+        <div class="card" id="cardCheckin" data-card="checkin">
+            <div class="card-header">
+                <button class="back-btn" onclick="Cards.show('map')">←</button>
+                <h1>Nuevo Check-in</h1>
+            </div>
+            <div class="card-content">
+                <div id="locationStatus" class="status-message">
+                    Obteniendo ubicación...
+                </div>
 
-            <button class="fab" id="checkinBtn" aria-label="Hacer check-in">
-                <span>+</span>
-            </button>
-        </main>
+                <div id="mapPreview" class="map-preview"></div>
+
+                <div class="form-section">
+                    <label>Ubicación GPS</label>
+                    <div id="currentLocation" class="location-display">
+                        Cargando...
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <label for="placeSearch">Buscar lugar (opcional)</label>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input type="text" id="placeSearch" placeholder="Escribe y pulsa Buscar...">
+                        <button type="button" id="searchBtn" class="btn-search">Buscar</button>
+                    </div>
+                    <div id="placeResults" class="place-results"></div>
+                </div>
+
+                <div class="form-section">
+                    <label for="placeNote">Nota (opcional)</label>
+                    <textarea id="placeNote" rows="3" placeholder="¿Qué hiciste aquí?"></textarea>
+                </div>
+
+                <div class="form-section">
+                    <label for="placePhoto">Foto (opcional)</label>
+                    <input type="file" id="placePhoto" accept="image/*" capture="environment">
+                    <div id="photoPreview"></div>
+                </div>
+
+                <button id="saveCheckin" class="btn-primary">Guardar Check-in</button>
+            </div>
+        </div>
+
+        <!-- TARJETA: Historial -->
+        <div class="card" id="cardHistory" data-card="history">
+            <div class="card-header">
+                <button class="back-btn" onclick="Cards.show('map')">←</button>
+                <h1>Historial</h1>
+            </div>
+            <div class="card-content">
+                <div class="filter-section">
+                    <input type="text" id="searchFilter" placeholder="Buscar...">
+                    <select id="sortFilter">
+                        <option value="newest">Recientes</option>
+                        <option value="oldest">Antiguos</option>
+                    </select>
+                </div>
+
+                <div id="checkinsList" class="checkins-list"></div>
+
+                <div id="emptyState" class="empty-state" style="display: none;">
+                    <p>No hay check-ins todavía</p>
+                    <button class="btn-primary" onclick="Cards.show('checkin')">Hacer primer check-in</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TARJETA: Estadísticas -->
+        <div class="card" id="cardStats" data-card="stats">
+            <div class="card-header">
+                <button class="back-btn" onclick="Cards.show('map')">←</button>
+                <h1>Estadísticas</h1>
+            </div>
+            <div class="card-content">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number" id="statTotal">0</div>
+                        <div class="stat-label">Check-ins</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="statPlaces">0</div>
+                        <div class="stat-label">Lugares</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="statPhotos">0</div>
+                        <div class="stat-label">Con Fotos</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="statNotes">0</div>
+                        <div class="stat-label">Con Notas</div>
+                    </div>
+                </div>
+
+                <div class="stats-section">
+                    <h2>Lugares más visitados</h2>
+                    <div id="topPlaces" class="top-list"></div>
+                </div>
+
+                <div class="stats-section">
+                    <h2>Check-ins por mes</h2>
+                    <div id="monthlyChart" class="chart"></div>
+                </div>
+
+                <div class="stats-section">
+                    <h2>Check-ins por día</h2>
+                    <div id="weekdayChart" class="chart"></div>
+                </div>
+
+                <div class="stats-section">
+                    <h2>Mapa de calor</h2>
+                    <div id="heatMap" class="map-heat"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TARJETA: Exportar -->
+        <div class="card" id="cardExport" data-card="export">
+            <div class="card-header">
+                <button class="back-btn" onclick="Cards.show('map')">←</button>
+                <h1>Exportar</h1>
+            </div>
+            <div class="card-content">
+                <div class="export-section">
+                    <h2>Exportar a CSV</h2>
+                    <p>Descarga en formato Excel</p>
+                    <button id="exportCSV" class="btn-primary">Descargar CSV</button>
+                </div>
+
+                <div class="export-section">
+                    <h2>Exportar a iCal</h2>
+                    <p>Importa en tu calendario</p>
+                    <button id="exportICal" class="btn-primary">Descargar iCal</button>
+                </div>
+
+                <div class="export-section">
+                    <h2>Backup JSON</h2>
+                    <p>Copia de seguridad completa</p>
+                    <button id="exportJSON" class="btn-primary">Descargar JSON</button>
+                </div>
+
+                <div class="export-section">
+                    <h2>Importar Backup</h2>
+                    <p>Restaura tus datos</p>
+                    <input type="file" id="importFile" accept=".json" style="display: none;">
+                    <button id="importJSON" class="btn-primary">Importar JSON</button>
+                    <p class="hint" style="color: #f44336; margin-top: 0.5rem;">Reemplazará todos tus datos</p>
+                </div>
+
+                <div class="export-section danger-zone">
+                    <h2>Eliminar Todo</h2>
+                    <p>Acción irreversible</p>
+                    <button id="clearAll" class="btn-danger">Eliminar Datos</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Wave Launcher -->
+    <div id="waveLauncher">
+        <div class="wave-btn" data-action="checkin" title="Check-in">
+            <span>+</span>
+        </div>
+        <div class="wave-btn" data-action="history" title="Historial">
+            <span>📋</span>
+        </div>
+        <div class="wave-btn" data-action="stats" title="Stats">
+            <span>📊</span>
+        </div>
+        <div class="wave-btn" data-action="export" title="Export">
+            <span>💾</span>
+        </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="js/storage.js"></script>
     <script src="js/maps.js"></script>
+    <script src="js/export.js"></script>
     <script src="js/app.js"></script>
     <script>
         if ('serviceWorker' in navigator) {
