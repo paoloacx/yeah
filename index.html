@@ -16,7 +16,7 @@
             <defs>
                 <!-- Radial glow -->
                 <radialGradient id="glow" cx="50%" cy="65%" r="60%">
-                    <stop offset="0%" stop-color="#4e6aff" stop-opacity="0.35" />
+                    <stop offset="0%" stop-color="#4e6aff" stop-opacity="0.22" />
                     <stop offset="60%" stop-color="#1b2336" stop-opacity="0.35" />
                     <stop offset="100%" stop-color="#0c0f13" stop-opacity="1" />
                 </radialGradient>
@@ -223,16 +223,10 @@
 
                 <div class="export-section">
                     <h2>Importar Backup</h2>
-                    <p>Restaura tus datos</p>
+                    <p>Combina con datos actuales</p>
                     <input type="file" id="importFile" accept=".json" style="display: none;">
                     <button id="importJSON" class="btn-primary">Importar JSON</button>
-                    <p class="hint" style="color: #f44336; margin-top: 0.5rem;">Reemplazará todos tus datos</p>
-                </div>
-
-                <div class="export-section danger-zone">
-                    <h2>Eliminar Todo</h2>
-                    <p>Acción irreversible</p>
-                    <button id="clearAll" class="btn-danger">Eliminar Datos</button>
+                    <p class="hint" style="color: #666; margin-top: 0.5rem;">Los check-ins duplicados se ignorarán</p>
                 </div>
             </div>
         </div>
