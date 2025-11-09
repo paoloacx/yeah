@@ -634,7 +634,7 @@ body {
     }
 
     .card {
-        max-width: 100%;
+        max-width: 85%;
         height: calc(100vh - 140px);
     }
 
