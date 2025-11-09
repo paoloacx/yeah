@@ -1,30 +1,50 @@
+// Sistema de notificaciones Toast
+function showToast(message, type = 'normal') {
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        document.body.appendChild(container);
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    
+    container.appendChild(toast);
+
+    // Auto-eliminar
+    setTimeout(() => {
+        toast.classList.add('hiding');
+        toast.addEventListener('animationend', () => toast.remove());
+    }, 3000);
+}
+
 const CardStack = {
     currentIndex: 0,
     cards: [],
     startX: 0,
     currentX: 0,
     isDragging: false,
-    dragThreshold: 100, // Reducido ligeramente para facilitar el swipe
+    hasMoved: false, // NUEVO: Para diferenciar tap de swipe
+    dragThreshold: 80,
 
     init() {
         this.cards = Array.from(document.querySelectorAll('.card'));
         this.totalCards = this.cards.length;
         this.updatePositions();
         this.initListeners();
-        
-        // Esperar un tick para que el DOM esté listo antes de cargar el mapa
         setTimeout(() => this.loadCardContent(0), 100);
     },
 
     initListeners() {
         const stack = document.getElementById('cardStack');
         
-        // Touch
+        // Usar passive: false para poder prevenir scroll si es necesario
         stack.addEventListener('touchstart', e => this.dragStart(e.touches[0]), { passive: true });
         stack.addEventListener('touchmove', e => this.dragMove(e.touches[0]), { passive: false });
         stack.addEventListener('touchend', () => this.dragEnd());
         
-        // Mouse
         stack.addEventListener('mousedown', e => this.dragStart(e));
         stack.addEventListener('mousemove', e => this.dragMove(e));
         stack.addEventListener('mouseup', () => this.dragEnd());
@@ -32,14 +52,13 @@ const CardStack = {
     },
 
     dragStart(e) {
-        // Evitar arrastre en elementos interactivos
+        // Ignorar interacciones en mapas y elementos de formulario
         if (e.target.closest('.leaflet-container') || 
             e.target.closest('button') || 
-            e.target.closest('input, textarea, select') ||
-            e.target.closest('.checkin-actions')) {
-            return;
-        }
+            e.target.closest('input, textarea')) return;
+            
         this.isDragging = true;
+        this.hasMoved = false; // Resetear bandera de movimiento
         this.startX = e.clientX;
         this.cards[this.currentIndex].classList.add('dragging');
     },
@@ -47,13 +66,12 @@ const CardStack = {
     dragMove(e) {
         if (!this.isDragging) return;
         
-        // Prevenir scroll de página mientras arrastramos
-        // e.preventDefault no funciona aquí si el listener es pasivo, pero lo hemos puesto en false para touchmove
-        
         this.currentX = e.clientX;
         const diff = this.currentX - this.startX;
+
+        // Solo considerar que "se ha movido" si supera un pequeño umbral (evita micro-movimientos al hacer tap)
+        if (Math.abs(diff) > 5) this.hasMoved = true;
         
-        // Física elástica
         const resistance = 0.7;
         const translateX = diff * resistance;
         const rotate = diff * 0.04;
@@ -67,14 +85,15 @@ const CardStack = {
         if (!this.isDragging) return;
         this.isDragging = false;
         
-        const diff = this.currentX - this.startX;
         const activeCard = this.cards[this.currentIndex];
-        
         activeCard.classList.remove('dragging');
         activeCard.style.transform = '';
         activeCard.style.opacity = '';
         
-        if (Math.abs(diff) > this.dragThreshold) {
+        const diff = this.currentX - this.startX;
+        
+        // SOLO cambiar si hubo movimiento real Y superó el umbral
+        if (this.hasMoved && Math.abs(diff) > this.dragThreshold) {
             diff > 0 ? this.prev() : this.next();
         }
     },
@@ -95,9 +114,7 @@ const CardStack = {
         this.cards.forEach((card, index) => {
             let position = (index - this.currentIndex + this.totalCards) % this.totalCards;
             if (position > this.totalCards / 2) position -= this.totalCards;
-            
             card.setAttribute('data-position', position);
-            
             card.querySelectorAll('.dot').forEach((dot, i) => 
                 dot.classList.toggle('active', i === this.currentIndex));
         });
@@ -107,113 +124,129 @@ const CardStack = {
         const cardType = this.cards[index].dataset.card;
         switch(cardType) {
             case 'map': 
-                if (!window.mainMap) {
-                    initMainMap();
-                } else {
-                    // Clave: Forzar redibujado del mapa al volver a él
-                    setTimeout(() => window.mainMap.invalidateSize(), 200);
-                }
+                if (window.mainMap) setTimeout(() => window.mainMap.invalidateSize(), 200);
+                else initMainMap();
                 break;
             case 'checkin':
-                if (!window.checkinInitialized) {
-                    initCheckin();
-                    window.checkinInitialized = true;
-                }
+                // Si volvemos a la tarjeta de checkin y NO estamos editando, asegurar que está limpia
+                if (!window.editingCheckinId) resetCheckinForm();
+                if (!window.checkinMap) initCheckinMap();
                 break;
             case 'history': loadHistory(); break;
             case 'stats': loadStats(); break;
-            case 'settings': initSettings(); break;
         }
     }
 };
 
-// --- Lógica Global de la App ---
-
-let mainMap, checkinMap, currentPos, selectedPlace;
+// Variables Globales
+let mainMap, checkinMap, currentPos, editingCheckinId = null;
+let checkinMarker = null;
 
 document.addEventListener('DOMContentLoaded', () => CardStack.init());
 
+// --- Funciones de Mapa ---
 function initMainMap() {
     if (mainMap) return;
-    Maps.getCurrentPosition().then(pos => {
-        mainMap = Maps.createMap('map', pos.lat, pos.lng);
-        Maps.addCheckinsToMap(mainMap, Storage.getAllCheckins());
-    }).catch(() => {
-        mainMap = Maps.createMap('map', 40.4168, -3.7038, 6);
-        Maps.addCheckinsToMap(mainMap, Storage.getAllCheckins());
-    });
+    // Intentar obtener posición inicial para centrar el mapa principal
+    navigator.geolocation.getCurrentPosition(
+        pos => createMainMap(pos.coords.latitude, pos.coords.longitude),
+        err => createMainMap(40.4168, -3.7038) // Madrid por defecto
+    );
 }
 
-function initCheckin() {
-    const status = document.getElementById('locationStatus');
+function createMainMap(lat, lng) {
+    mainMap = Maps.createMap('map', lat, lng, 13);
+    Maps.addCheckinsToMap(mainMap, Storage.getAllCheckins());
+}
+
+function initCheckinMap() {
+    if (checkinMap) return;
     
-    // Usar watchPosition para mantener la ubicación actualizada
-    navigator.geolocation.watchPosition(pos => {
-        currentPos = { 
-            lat: pos.coords.latitude, 
-            lng: pos.coords.longitude,
-            accuracy: pos.coords.accuracy 
-        };
-        
-        status.textContent = 'Ubicación actualizada ✓';
-        status.className = 'status-message success';
-        document.getElementById('currentLocation').textContent = 
-            `${currentPos.lat.toFixed(5)}, ${currentPos.lng.toFixed(5)}`;
-        
-        if (!checkinMap) {
-            checkinMap = Maps.createMap('mapPreview', currentPos.lat, currentPos.lng, 16);
-        } else {
-            checkinMap.setView([currentPos.lat, currentPos.lng], 16);
+    // Inicializar con una vista por defecto, luego el watchPosition lo actualizará
+    checkinMap = Maps.createMap('mapPreview', 0, 0, 2);
+
+    // *** NUEVO: Permitir toque en el mapa para reubicar ***
+    checkinMap.on('click', (e) => {
+        const { lat, lng } = e.latlng;
+        updateCheckinLocation(lat, lng, '📍 Ubicación manual');
+        // Detener el seguimiento automático si el usuario toca manualmente
+        if (window.geoWatchId) {
+            navigator.geolocation.clearWatch(window.geoWatchId);
+            window.geoWatchId = null;
         }
-        // Actualizar marcador sin recrear el mapa entero constantemente
-        Maps.addMarker(checkinMap, currentPos.lat, currentPos.lng);
-        
-    }, err => {
-        status.textContent = 'Buscando señal GPS...';
-        status.className = 'status-message';
-    }, { 
-        enableHighAccuracy: true,
-        maximumAge: 10000,
-        timeout: 20000 
     });
 
-    document.getElementById('saveCheckin').onclick = saveCheckin;
+    startLocationWatch();
 }
 
-function saveCheckin() {
-    if (!currentPos) {
-        alert('Aún no tenemos tu ubicación precisa.');
-        return;
-    }
+function startLocationWatch() {
+    if (window.geoWatchId) navigator.geolocation.clearWatch(window.geoWatchId);
     
-    const note = document.getElementById('placeNote').value.trim();
-    const checkin = {
-        id: Date.now(),
-        timestamp: new Date().toISOString(),
-        location: currentPos,
-        note: note,
-        place: selectedPlace || null
-        // Falta implementar foto por ahora para simplificar
-    };
+    window.geoWatchId = navigator.geolocation.watchPosition(
+        pos => {
+            // Solo actualizar si NO estamos editando un checkin existente (para no sobrescribir su ubicación original al abrirlo)
+            if (!editingCheckinId) {
+                updateCheckinLocation(pos.coords.latitude, pos.coords.longitude, 'Ubicación GPS actualizada');
+            }
+        },
+        err => showToast('Buscando señal GPS...', 'error'),
+        { enableHighAccuracy: true, maximumAge: 10000 }
+    );
+}
+
+function updateCheckinLocation(lat, lng, statusMsg) {
+    currentPos = { lat, lng };
     
-    Storage.saveCheckin(checkin);
+    // Actualizar texto de estado y coordenadas
+    document.getElementById('locationStatus').textContent = statusMsg || 'Ubicación fijada';
+    document.getElementById('currentLocation').textContent = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
     
-    // Feedback y reset
+    // Mover mapa y marcador
+    checkinMap.setView([lat, lng], 16);
+    if (checkinMarker) checkinMarker.remove();
+    checkinMarker = Maps.addMarker(checkinMap, lat, lng);
+}
+
+// --- Funciones de Check-in ---
+function resetCheckinForm() {
+    editingCheckinId = null;
+    document.getElementById('cardTitleCheckin').textContent = 'Nuevo Yeah¡';
+    document.getElementById('saveCheckin').textContent = 'Guardar Yeah¡';
     document.getElementById('placeNote').value = '';
-    // Vibración de éxito si el navegador lo soporta
-    if (navigator.vibrate) navigator.vibrate(50);
-    
-    // Volver al mapa principal y recargarlo
-    CardStack.currentIndex = 0;
+    startLocationWatch(); // Volver a seguir al usuario
+}
+
+document.getElementById('saveCheckin').onclick = () => {
+    if (!currentPos) return showToast('Espera, necesitamos ubicación', 'error');
+
+    const checkin = {
+        id: editingCheckinId || Date.now(),
+        timestamp: editingCheckinId ? Storage.getCheckin(editingCheckinId).timestamp : new Date().toISOString(),
+        location: currentPos,
+        note: document.getElementById('placeNote').value.trim()
+    };
+
+    if (editingCheckinId) {
+        Storage.updateCheckin(editingCheckinId, checkin);
+        showToast('Yeah¡ actualizado correctamente', 'success');
+    } else {
+        Storage.saveCheckin(checkin);
+        showToast('¡Yeah! Guardado', 'success');
+    }
+
+    resetCheckinForm();
+    CardStack.currentIndex = 0; // Volver al mapa principal
     CardStack.updatePositions();
-    // Recargar markers en el mapa principal
+    
+    // Actualizar mapa principal
     if (mainMap) {
         Maps.addCheckinsToMap(mainMap, Storage.getAllCheckins());
-        mainMap.setView([currentPos.lat, currentPos.lng], 15);
+        mainMap.setView([checkin.location.lat, checkin.location.lng], 15);
     }
     CardStack.loadCardContent(0);
-}
+};
 
+// --- Historial y Edición ---
 function loadHistory() {
     const list = document.getElementById('checkinsList');
     const checkins = Storage.getAllCheckins().sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
@@ -229,36 +262,61 @@ function loadHistory() {
     
     list.innerHTML = checkins.map(c => `
         <div class="checkin-item">
-            <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
-                <strong style="font-size:1.1rem;">${c.place ? c.place.name : '📍 Ubicación marcada'}</strong>
-                <small style="color:var(--text-secondary)">
-                    ${new Date(c.timestamp).toLocaleDateString('es-ES', {weekday: 'short', day:'numeric', month:'short'})}
-                    ${new Date(c.timestamp).toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'})}
-                </small>
+            <div style="margin-bottom:0.5rem">
+                <strong>${new Date(c.timestamp).toLocaleDateString()}</strong>
+                <span style="opacity:0.7"> - ${new Date(c.timestamp).toLocaleTimeString().slice(0,5)}</span>
             </div>
-            ${c.note ? `<p style="font-style:italic; margin-bottom:0.5rem; color:var(--text-primary)">"${c.note}"</p>` : ''}
-            <div style="font-family:monospace; font-size:0.8rem; color:var(--text-secondary)">
-                ${c.location.lat.toFixed(6)}, ${c.location.lng.toFixed(6)}
+            ${c.note ? `<p style="font-style:italic; color:var(--primary-color); margin-bottom:0.5rem">"${c.note}"</p>` : ''}
+            <div style="font-family:monospace; font-size:0.8rem; opacity:0.6">
+                ${c.location.lat.toFixed(4)}, ${c.location.lng.toFixed(4)}
+            </div>
+            <div class="checkin-actions">
+                <button class="btn-icon" onclick="editCheckin(${c.id})">✏️</button>
+                <button class="btn-icon" onclick="deleteCheckin(${c.id})" style="color:var(--danger-color)">🗑️</button>
             </div>
         </div>
     `).join('');
 }
 
-function loadStats() {
-    const checkins = Storage.getAllCheckins();
-    document.getElementById('statTotal').textContent = checkins.length;
-    
-    // Lugares únicos (basado en coordenadas redondeadas para agrupar cercanos)
-    const uniquePlaces = new Set(checkins.map(c => 
-        `${c.location.lat.toFixed(3)},${c.location.lng.toFixed(3)}`
-    ));
-    document.getElementById('statPlaces').textContent = uniquePlaces.size;
-    
-    document.getElementById('statNotes').textContent = checkins.filter(c => c.note).length;
-    // Fotos pendiente de re-implementar
-}
+// Hacer estas funciones globales para que el HTML onclick las vea
+window.editCheckin = function(id) {
+    const checkin = Storage.getCheckin(id);
+    if (!checkin) return;
 
-function initSettings() {
-    document.getElementById('exportJSON').onclick = () => Export.toJSON();
-    // Otros exports se pueden reactivar aquí
+    editingCheckinId = id;
+    currentPos = checkin.location;
+
+    // Rellenar formulario
+    document.getElementById('cardTitleCheckin').textContent = 'Editando Yeah¡';
+    document.getElementById('saveCheckin').textContent = 'Actualizar Yeah¡';
+    document.getElementById('placeNote').value = checkin.note || '';
+    
+    // Ir a la tarjeta de checkin (índice 1)
+    CardStack.currentIndex = 1;
+    CardStack.updatePositions();
+    
+    // Esperar a que la transición termine un poco antes de cargar el mapa
+    setTimeout(() => {
+        if (!checkinMap) initCheckinMap();
+        // Detener el watch GPS para que no sobrescriba la posición que estamos editando
+        if (window.geoWatchId) {
+            navigator.geolocation.clearWatch(window.geoWatchId);
+            window.geoWatchId = null;
+        }
+        updateCheckinLocation(currentPos.lat, currentPos.lng, '📍 Ubicación original');
+    }, 300);
+};
+
+window.deleteCheckin = function(id) {
+    if (confirm('¿Seguro que quieres borrar este Yeah?')) {
+        Storage.deleteCheckin(id);
+        loadHistory();
+        showToast('Yeah eliminado', 'normal');
+        if (mainMap) Maps.addCheckinsToMap(mainMap, Storage.getAllCheckins());
+    }
+};
+
+function loadStats() {
+    document.getElementById('statTotal').textContent = Storage.getAllCheckins().length;
+    // Stats simples por ahora
 }
