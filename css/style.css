@@ -48,6 +48,11 @@ body {
     transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.6s;
 }
 
+/* CORRECCIÓN MAPA INICIAL: Forzar recorte a la forma de la tarjeta */
+.card[data-card="map"] {
+    overflow: hidden !important; /* Esto corta todo lo que sobresalga de las esquinas redondeadas */
+}
+
 /* Posiciones desordenadas */
 .card[data-position="0"] { z-index: 10; transform: translateX(0) translateY(0px) scale(1) rotate(0deg); opacity: 1; }
 .card[data-position="1"] { z-index: 9; transform: translateX(10px) translateY(25px) scale(0.94) rotate(1.5deg); opacity: 0.6; pointer-events: none; filter: brightness(0.95); }
@@ -60,7 +65,9 @@ body {
     padding: 1.5rem; display: flex; justify-content: space-between; align-items: center;
     background: linear-gradient(to bottom, #ECEFF1, #CFD8DC);
     border-bottom: 1px solid rgba(0,0,0,0.06);
-    border-radius: var(--radius-card) var(--radius-card) 0 0;
+    /* Forzamos que el header respete el redondeo superior de la card */
+    border-top-left-radius: var(--radius-card);
+    border-top-right-radius: var(--radius-card);
     z-index: 2; position: relative; overflow: hidden;
 }
 .card-header::before {
@@ -72,44 +79,31 @@ body {
 .dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(0,0,0,0.2); transition: all 0.4s ease; }
 .dot.active { background: var(--primary-color); transform: scale(1.4); }
 
-/* CONTENIDO con ruido forzado */
+/* CONTENIDO con ruido */
 .card-content {
     flex: 1; padding: 1.5rem; overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     background-color: #F5F7F8;
     scrollbar-width: none;
-    border-radius: 0 0 var(--radius-card) var(--radius-card);
-    position: relative; /* Necesario para el pseudo-elemento de ruido */
-}
-/* Capa de ruido separada para garantizar visibilidad */
-.card-content::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-    opacity: 0.15; /* Ajusta este valor si quieres más o menos ruido */
-    pointer-events: none;
-    mix-blend-mode: multiply;
-    z-index: 0;
-}
-/* Asegura que el contenido interactuable esté por encima del ruido */
-.card-content > * {
+    /* Forzamos redondeo inferior */
+    border-bottom-left-radius: var(--radius-card);
+    border-bottom-right-radius: var(--radius-card);
     position: relative;
-    z-index: 1;
 }
-
+.card-content::after {
+    content: ""; position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    opacity: 0.15; pointer-events: none; mix-blend-mode: multiply; z-index: 0;
+}
+.card-content > * { position: relative; z-index: 1; }
 .card-content::-webkit-scrollbar { display: none; }
 
-/* MAPA PRINCIPAL: Redondeo forzado */
-/* Aplicamos el redondeo al contenedor específico de la tarjeta de mapa para que recorte el mapa */
-.card[data-card="map"] .card-content {
-    border-radius: 0 0 var(--radius-card) var(--radius-card) !important;
-    overflow: hidden !important;
-}
+/* MAPA PRINCIPAL */
 .map-full {
     width: 100%; height: 100%;
-    /* Forzamos también aquí por seguridad */
-    border-radius: 0 0 var(--radius-card) var(--radius-card) !important;
+    /* Doble seguridad para el redondeo */
+    border-bottom-left-radius: var(--radius-card);
+    border-bottom-right-radius: var(--radius-card);
 }
 
 /* UI */
@@ -234,3 +228,17 @@ input:focus, textarea:focus, select:focus {
 .modal-header h2 { font-size: 1.2rem; color: #37474F; }
 .modal .modal-content { padding: 1.5rem; background: white; }
 .modal-actions { display: flex; gap: 1rem; margin-top: 1.5rem; }
+
+/* BOTONES ICONO (Corrección para que sean redondos) */
+.btn-icon {
+    width: 46px !important; height: 46px !important; /* Forzamos tamaño cuadrado */
+    min-width: 46px !important; /* Evita que flexbox lo aplaste */
+    border-radius: 50% !important; /* Forzamos circulo */
+    border: none;
+    background: #f5f5f5; font-size: 1.2rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    aspect-ratio: 1 / 1; /* Asegura proporción 1:1 en navegadores modernos */
+    padding: 0; /* Elimina padding que pueda deformarlo */
+}
+.btn-icon:active { transform: scale(0.9); }
