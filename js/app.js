@@ -38,7 +38,8 @@ const CardStack = {
         s.addEventListener('mouseup', () => this.dragEnd());
     },
     dragStart(e) {
-        if (e.target.closest('.leaflet-container, button, input, textarea, .checkin-actions')) return;
+        // Evitar arrastrar si tocamos mapa o botones
+        if (e.target.closest('.leaflet-container, button, input, textarea, .checkin-item, dialog')) return;
         this.isDragging = true; this.hasMoved = false;
         this.startX = e.clientX;
         this.cards[this.currentIndex].classList.add('dragging');
@@ -74,12 +75,12 @@ const CardStack = {
         if (type === 'map') window.mainMap ? setTimeout(() => window.mainMap.invalidateSize(), 200) : initMainMap();
         if (type === 'checkin' && !window.editingId) resetCheckin();
         if (type === 'history') loadHistory();
-        if (type === 'stats') loadStats(); // Carga las estadísticas completas
+        if (type === 'stats') loadStats();
     }
 };
 
 // --- App Globals & Init ---
-let mainMap, checkinMap, heatMapInstance, currentPos, editingId = null, watchId = null, marker = null;
+let mainMap, checkinMap, detailsMap, heatMapInstance, currentPos, editingId = null, watchId = null, marker = null;
 document.addEventListener('DOMContentLoaded', () => CardStack.init());
 
 // --- Maps & Location ---
@@ -161,7 +162,7 @@ window.deleteCheckin = (id) => {
     }
 };
 
-// --- History & Stats (RESTAURADAS) ---
+// --- History & Details Modal ---
 function loadHistory() {
     const list = document.getElementById('checkinsList');
     const all = Storage.getAllCheckins().sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
@@ -171,38 +172,65 @@ function loadHistory() {
     const tF = new Intl.DateTimeFormat('es-ES', {hour:'2-digit', minute:'2-digit'});
     
     list.innerHTML = all.map(c => `
-        <div class="checkin-item">
+        <div class="checkin-item" onclick="showDetails(${c.id})">
             <span class="date-time">${dF.format(new Date(c.timestamp))} • ${tF.format(new Date(c.timestamp))}</span>
             ${c.note ? `<p class="note-text">${c.note}</p>` : '<p class="note-text" style="opacity:0.5">Sin nota</p>'}
-            <span class="location-coords">${c.location.lat.toFixed(4)}, ${c.location.lng.toFixed(4)}</span>
-            <div class="checkin-actions">
-                <button class="btn-icon edit" onclick="editCheckin(${c.id})">✏️</button>
-                <button class="btn-icon delete" onclick="deleteCheckin(${c.id})">🗑️</button>
-            </div>
         </div>
     `).join('');
 }
 
+window.showDetails = (id) => {
+    const c = Storage.getCheckin(id); if(!c) return;
+    const dF = new Intl.DateTimeFormat('es-ES', {dateStyle:'full', timeStyle:'short'});
+    
+    document.getElementById('detailsInfo').innerHTML = `
+        <p style="font-size:0.9rem; color:#90A4AE; font-weight:600; margin-bottom:0.5rem">${dF.format(new Date(c.timestamp))}</p>
+        <p style="font-size:1.2rem; color:#37474F; margin-bottom:1rem">${c.note || '<i style="opacity:0.6">Sin nota</i>'}</p>
+        <p style="font-family:monospace; color:#B0BEC5">${c.location.lat.toFixed(6)}, ${c.location.lng.toFixed(6)}</p>
+    `;
+
+    document.getElementById('btnEdit').onclick = () => { closeDetails(); editCheckin(id); };
+    document.getElementById('btnDelete').onclick = () => { 
+        if(confirm('¿Eliminar definitivamente?')) {
+            Storage.deleteCheckin(id);
+            closeDetails();
+            loadHistory();
+            if(mainMap) Maps.addCheckinsToMap(mainMap, Storage.getAllCheckins());
+            showToast('Yeah eliminado 🗑️');
+        }
+    };
+
+    document.getElementById('detailsModal').showModal();
+    
+    setTimeout(() => {
+        if(!detailsMap) detailsMap = Maps.createMap('detailsMap', c.location.lat, c.location.lng, 15);
+        else { detailsMap.invalidateSize(); detailsMap.setView([c.location.lat, c.location.lng], 15); }
+        
+        // Limpiar marcadores anteriores del mapa de detalles si los hubiera
+        detailsMap.eachLayer(layer => { if(layer instanceof L.Marker) detailsMap.removeLayer(layer); });
+        Maps.addMarker(detailsMap, c.location.lat, c.location.lng);
+    }, 100);
+};
+
+window.closeDetails = () => document.getElementById('detailsModal').close();
+
+// --- Stats ---
 function loadStats() {
     const checkins = Storage.getAllCheckins();
-    // Totales
     document.getElementById('statTotal').textContent = checkins.length;
     document.getElementById('statPlaces').textContent = new Set(checkins.map(c => `${c.location.lat.toFixed(3)},${c.location.lng.toFixed(3)}`)).size;
     document.getElementById('statNotes').textContent = checkins.filter(c => c.note && c.note.trim()).length;
     
-    // Lugares Top
     const places = {}; checkins.forEach(c => { const k = `${c.location.lat.toFixed(3)}, ${c.location.lng.toFixed(3)}`; places[k] = (places[k]||0)+1; });
     const sortedPlaces = Object.entries(places).sort((a,b) => b[1]-a[1]).slice(0,5);
     document.getElementById('topPlaces').innerHTML = sortedPlaces.length ? sortedPlaces.map(([k,v]) => 
         `<div class="top-item"><span>📍 ${k}</span><span class="place-count">${v}</span></div>`).join('') : '<p style="opacity:0.6;text-align:center">Sin datos</p>';
 
-    // Gráficos
     loadChart(checkins, 'monthlyChart', c => new Date(c.timestamp).toISOString().slice(0,7), (k) => {
         const [y, m] = k.split('-'); return new Date(y, m-1).toLocaleDateString('es-ES',{month:'short'});
     });
     loadChart(checkins, 'weekdayChart', c => new Date(c.timestamp).getDay(), k => ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'][k]);
     
-    // Mapa de Calor (Fix para SPA)
     if (heatMapInstance) { heatMapInstance.remove(); heatMapInstance = null; }
     if (checkins.length > 0) {
          heatMapInstance = Maps.createMap('heatMap', 40.4168, -3.7038, 5);
