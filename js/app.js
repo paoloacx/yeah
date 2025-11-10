@@ -120,6 +120,15 @@ document.addEventListener('DOMContentLoaded', () => {
             e.returnValue = '';
         }
     });
+    
+    // Hide loader after app is ready
+    setTimeout(() => {
+        const loader = document.getElementById('loader');
+        if (loader) {
+            loader.classList.add('hidden');
+            setTimeout(() => loader.remove(), 500);
+        }
+    }, 800);
 });
 
 // --- Topographic Background ---
