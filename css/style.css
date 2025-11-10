@@ -5,7 +5,7 @@
     --text-primary: #263238;
     --text-secondary: #78909C;
     --card-bg: #ffffff;
-    --bg-color: #1a1a1a;
+    --bg-color: #121212;
     --radius-card: 32px;
 }
 
@@ -23,32 +23,11 @@ body {
     overflow: hidden; touch-action: pan-y;
 }
 
-/* FONDO TOPOGRÁFICO ANIMADO MEJORADO */
 #background {
-    position: fixed; inset: 0; z-index: -1;
-    background-color: var(--bg-color);
-    overflow: hidden;
+    position: fixed; inset: 0; z-index: -1; background: #1a1a1a;
 }
-#background::before {
-    content: ""; position: absolute;
-    /* Hacemos el contenedor mucho más grande para el desplazamiento infinito */
-    width: 200%; height: 200%; top: -50%; left: -50%;
-    /* Patrón topográfico real que se repite */
-    background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h100v100H0z' fill='none'/%3E%3Cpath d='M13 23c-1.3 0-2.4.2-3.4.5-1 .4-1.9.9-2.7 1.5-.8.6-1.5 1.3-2 2.2-.6.8-1 1.8-1.3 2.9-.3 1.1-.4 2.3-.3 3.5.1 1.2.4 2.4.9 3.5.5 1.1 1.1 2.1 1.9 3 1.7 1.9 4.1 3 6.6 3.2 2.5.2 5.1-.5 7.2-2 2.1-1.5 3.8-3.8 4.5-6.3.4-1.3.5-2.6.4-4-.1-1.3-.4-2.7-1-3.9-.6-1.2-1.4-2.2-2.4-3.1-2-1.8-4.7-2.7-7.4-2.5-2.7.2-5.3 1.3-7.3 3.1l1.4 1.4c1.6-1.5 3.7-2.4 6-2.5 2.2-.2 4.4.6 6.1 2 1.7 1.5 2.7 3.6 2.9 5.9.1 1.1 0 2.2-.3 3.3-.3 1.1-.8 2.1-1.5 3-1.4 1.8-3.5 3-5.7 3.3-2.2.3-4.5-.4-6.2-1.9-.9-.7-1.5-1.6-2-2.6-.5-1-.7-2.1-.8-3.2 0-1.1.2-2.2.6-3.1.4-1 .9-1.8 1.6-2.6.7-.7 1.5-1.3 2.4-1.7 1.8-.8 3.9-1 5.8-.4l1.1-1.9zm34 4c-2.2 0-4.3.7-6.1 2-1.7 1.4-3 3.2-3.6 5.4-.6 2.2-.6 4.5 0 6.7.5 2.2 1.7 4.2 3.3 5.8 1.6 1.6 3.6 2.8 5.8 3.3 2.2.6 4.5.6 6.7 0 2.2-.6 4-1.9 5.4-3.6 1.4-1.7 2-3.9 2-6.1 0-1.1-.2-2.2-.6-3.3-.4-1-1-2-1.7-2.9-.7-.9-1.6-1.6-2.6-2.2-.9-.5-2-1-3.1-1.2-1.1-.2-2.2-.2-3.3 0-1.1.2-2.2.6-3.2 1.2-1 .6-1.8 1.4-2.5 2.3l1.6 1.2c1.2-1.5 3-2.5 5-2.7 1.9-.3 3.9.3 5.5 1.5 1.6 1.3 2.7 3.2 2.9 5.2.2 2-.5 4.1-1.9 5.6-1.4 1.6-3.4 2.5-5.5 2.6-2.1.1-4.1-.7-5.6-2.2-1.5-1.4-2.3-3.4-2.4-5.5-.1-2.1.7-4.1 2.2-5.6 1.5-1.5 3.5-2.3 5.6-2.3.4 0 .7 0 1.1.1v-2c-.4 0-.8 0-1.2 0zm-54 3c-1.1 0-2.2.2-3.2.6-1 .4-1.9 1-2.8 1.8-.9.8-1.5 1.7-2.1 2.7-.5 1-.9 2.1-1.1 3.3-.2 1.1-.3 2.3-.1 3.5.2 1.2.5 2.3 1 3.4.5 1.1 1.2 2.1 2 3 .8.9 1.8 1.6 2.8 2.2 1.1.6 2.2 1 3.4 1.1 1.2.1 2.4.1 3.6-.2 1.1-.2 2.2-.7 3.2-1.2 1-.6 1.9-1.3 2.7-2.2.8-.9 1.4-1.8 1.8-2.9.4-1 .7-2.2.8-3.3.1-1.2 0-2.4-.3-3.6-.3-1.1-.7-2.2-1.3-3.2-.6-1-1.3-1.9-2.1-2.7-.8-.8-1.8-1.5-2.8-2-1-1-3-1-4.1-1-1.1-.1-2.2 0-3.3.4zm66 8c-2.2 0-4.3.6-6.1 1.7-1.8 1.1-3.3 2.8-4.2 4.7-.9 2-1.3 4.1-1.1 6.3.2 2.2.9 4.2 2.2 6 1.2 1.7 2.9 3.1 4.9 3.9 1.9.8 4.1 1.1 6.2.7 2.1-.3 4.1-1.2 5.7-2.6 1.6-1.4 2.8-3.2 3.4-5.3.6-2.1.6-4.3 0-6.4-.6-2.1-1.8-3.9-3.4-5.3l-1.3 1.5c1.3 1.1 2.3 2.6 2.7 4.3.5 1.7.5 3.5 0 5.2-.5 1.7-1.5 3.1-2.8 4.3-1.3 1.2-2.9 1.9-4.6 2.1-1.7.3-3.5 0-5.1-.7-1.6-.7-2.9-1.8-3.9-3.2-1-1.4-1.6-3-1.8-4.8-.2-1.8.2-3.5.9-5.1.7-1.6 1.9-2.9 3.4-3.8 1.5-.9 3.2-1.4 5-1.4h.1v-2.1h-.2zm-21 25c-1.1 0-2.2.2-3.2.6-1 .4-1.9 1-2.7 1.8-.8.8-1.5 1.7-2 2.7-.5 1-.9 2.1-1.1 3.3-.2 1.1-.3 2.3-.2 3.5.1 1.2.5 2.3 1 3.4.5 1.1 1.1 2.1 1.9 3 .8.9 1.7 1.6 2.8 2.2 1 1 3 1 4.1 1 1.1-.1 2.2-.4 3.2-.9 1-.5 2-1.1 2.8-1.9.8-.8 1.5-1.8 2-2.8.5-1 .8-2.2.9-3.3.1-1.2 0-2.4-.2-3.6-.3-1.1-.7-2.2-1.3-3.2-.6-1-1.3-1.9-2.2-2.7-.9-.8-1.9-1.5-2.9-2-1.1-.5-2.2-.8-3.4-.9-.5-.2-1.1-.2-1.7-.2zm-56 10c-1.7 0-3.2.3-4.8 1-1.5.7-2.8 1.7-3.9 2.9-1.1 1.2-1.9 2.7-2.4 4.3-.5 1.6-.6 3.3-.5 5 .2 1.7.7 3.3 1.5 4.8.8 1.5 1.9 2.7 3.2 3.7 1.3 1 2.8 1.7 4.5 2.1 1.6.4 3.3.4 5 0 1.7-.4 3.2-1.1 4.5-2.2 1.3-1.1 2.4-2.5 3-4.1.7-1.6 1-3.3.9-5-.1-1.7-.5-3.4-1.3-4.9-.8-1.5-1.8-2.8-3.2-3.8-1.3-1-2.9-1.7-4.5-2.1-.7-.1-1.4-.2-2-.2v2.1c.5 0 1 0 1.6.2 1.3.3 2.6.9 3.7 1.7 1.1.8 1.9 1.9 2.6 3.1.6 1.2 1 2.6 1.1 4 .1 1.4-.2 2.7-.7 4-.6 1.3-1.5 2.5-2.5 3.4-1 1-2.3 1.6-3.7 1.9-1.4.3-2.8.3-4.1 0-1.4-.3-2.6-.9-3.7-1.8-1.1-.9-1.9-1.9-2.6-3.1-.7-1.2-1.1-2.6-1.2-4-.1-1.4.1-2.8.5-4.1.4-1.3 1.1-2.6 2-3.6.9-1 2-1.9 3.2-2.4 1.3-.6 2.6-.8 4-1v-2h-.1z' fill='%23ffffff' fill-opacity='0.12'/%3E%3C/svg%3E");
-    background-repeat: repeat;
-    background-size: 250px; /* Tamaño adecuado para que se note el patrón */
-    animation: drift 120s linear infinite; /* Movimiento lento y continuo */
-}
-/* Capa 2: Grano */
-#background::after {
-    content: ""; position: absolute; inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-    opacity: 0.04; mix-blend-mode: overlay; pointer-events: none;
-}
-
-@keyframes drift {
-    from { transform: translate(0, 0) rotate(0deg); }
-    to { transform: translate(-100px, -100px) rotate(2deg); }
+#background svg {
+    width: 100%; height: 100%; opacity: 0.5;
 }
 
 #cardStack {
@@ -111,10 +90,6 @@ body {
 }
 .card-content > * { position: relative; z-index: 1; }
 .card-content::-webkit-scrollbar { display: none; }
-
-/* CORRECCIÓN MAPA PRINCIPAL (Simplificada) */
-.card[data-card="map"] { overflow: hidden !important; -webkit-mask-image: -webkit-radial-gradient(white, black); }
-.card[data-card="map"] .card-content { padding: 0 !important; border-radius: 0 0 var(--radius-card) var(--radius-card) !important; }
 
 /* UI */
 .btn-primary, .btn-secondary {
@@ -181,14 +156,25 @@ input:focus, textarea:focus, select:focus {
 .checkin-item .note-text { font-size: 1.1rem; color: #37474F; margin-bottom: 0; }
 .checkin-item .location-coords { display: none; }
 
-/* MAPAS, STATS & HOME MAP */
-.map-preview, .map-heat, .map-home {
-    width: 100%; border-radius: 24px !important;
-    background: #ECEFF1;
-    overflow: hidden !important;
+/* MAPAS & STATS */
+/* Contenedor específico para el mapa de la Home para asegurar redondeo */
+.map-home-container {
+    width: 100%; height: 350px;
+    border-radius: 24px;
+    overflow: hidden; /* Esto recorta al mapa */
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 20px -5px rgba(0,0,0,0.2);
+    /* Máscara para WebKit */
+    -webkit-mask-image: -webkit-radial-gradient(white, black);
 }
-.map-preview, .map-heat { height: 200px; margin-bottom: 1.5rem; }
-.map-home { height: 350px; margin-bottom: 1.5rem; box-shadow: 0 4px 20px -5px rgba(0,0,0,0.2); }
+.map-home {
+    width: 100%; height: 100%;
+}
+.map-preview, .map-heat {
+    width: 100%; height: 200px; border-radius: 24px;
+    background: #ECEFF1; margin-bottom: 1.5rem;
+    overflow: hidden;
+}
 
 .quick-stats {
     text-align: center; padding: 1rem;
