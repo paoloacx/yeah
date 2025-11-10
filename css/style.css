@@ -31,7 +31,7 @@ body {
 }
 #topoCanvas {
     position: absolute; inset: 0; width: 100%; height: 100%;
-    opacity: 1; mix-blend-mode: screen;
+    opacity: 0.4; mix-blend-mode: screen;
 }
 
 #cardStack {
@@ -64,12 +64,11 @@ body {
     padding: 1.5rem; display: flex; justify-content: space-between; align-items: center;
     background: linear-gradient(to bottom, #ECEFF1, #CFD8DC);
     border-bottom: 1px solid rgba(0,0,0,0.06);
-    border-top-left-radius: var(--radius-card);
-    border-top-right-radius: var(--radius-card);
+    border-radius: var(--radius-card) var(--radius-card) 20px 20px;
     z-index: 2; position: relative; overflow: hidden;
 }
 .card-header::before {
-    content: ""; position: absolute; inset: 0; opacity: 0.50; pointer-events: none;
+    content: ""; position: absolute; inset: 0; opacity: 0.25; pointer-events: none;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
     mix-blend-mode: multiply;
 }
@@ -90,8 +89,8 @@ body {
 }
 .card-content::after {
     content: ""; position: absolute; inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.5' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-    opacity: 0.25; pointer-events: none; mix-blend-mode: multiply; z-index: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    opacity: 0.15; pointer-events: none; mix-blend-mode: multiply; z-index: 0;
 }
 .card-content > * { position: relative; z-index: 1; }
 .card-content::-webkit-scrollbar { display: none; }
@@ -166,10 +165,9 @@ input:focus, textarea:focus, select:focus {
 .map-home-container {
     width: 100%; height: 350px;
     border-radius: 24px;
-    overflow: hidden; /* Esto recorta al mapa */
+    overflow: hidden;
     margin-bottom: 1.5rem;
-    box-shadow: 5 5px 15px rgba(0, 0, 0, 0.55);
-    /* Máscara para WebKit */
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.2);
     -webkit-mask-image: -webkit-radial-gradient(white, black);
 }
 .map-home {
@@ -179,7 +177,7 @@ input:focus, textarea:focus, select:focus {
     width: 100%; height: 200px; border-radius: 24px;
     background: #ECEFF1; margin-bottom: 1.5rem;
     overflow: hidden;
-    box-shadow: 5 5px 15px rgba(0, 0, 0, 0,55);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .quick-stats {
