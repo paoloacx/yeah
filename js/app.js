@@ -104,75 +104,56 @@ function initTopoBackground() {
     resize();
     window.addEventListener('resize', resize);
     
-    // Create a height map with multiple noise layers
-    const heightMap = [];
-    const cols = 150;
-    const rows = 150;
-    
-    for (let y = 0; y < rows; y++) {
-        heightMap[y] = [];
-        for (let x = 0; x < cols; x++) {
-            let height = 0;
-            // Multiple octaves of Perlin-like noise
-            height += Math.sin(x * 0.05 + y * 0.03) * 20;
-            height += Math.sin(x * 0.1 + y * 0.08) * 10;
-            height += Math.sin(x * 0.2 + y * 0.15) * 5;
-            height += Math.cos(x * 0.03 + y * 0.05) * 15;
-            heightMap[y][x] = height;
-        }
+    // Simple noise function
+    function noise(x, y, time) {
+        return Math.sin(x * 0.02 + time * 0.0005) * Math.cos(y * 0.015) * 50 +
+               Math.sin(x * 0.015 + y * 0.02) * 30 +
+               Math.cos(x * 0.01 - y * 0.01 + time * 0.0003) * 40;
     }
     
     let time = 0;
     
     function animate() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-        ctx.lineWidth = 1;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+        ctx.lineWidth = 1.2;
         
-        const scaleX = canvas.width / cols;
-        const scaleY = canvas.height / rows;
-        
-        // Draw contour lines at different elevation levels
-        for (let elevation = -50; elevation < 50; elevation += 3) {
-            ctx.beginPath();
+        // Draw contour lines every 15 units
+        for (let level = -100; level <= 100; level += 15) {
+            const paths = [];
             
-            for (let y = 0; y < rows - 1; y++) {
-                for (let x = 0; x < cols - 1; x++) {
-                    const h1 = heightMap[y][x] + Math.sin(time * 0.001 + x * 0.1) * 2;
-                    const h2 = heightMap[y][x + 1] + Math.sin(time * 0.001 + (x + 1) * 0.1) * 2;
-                    const h3 = heightMap[y + 1][x] + Math.sin(time * 0.001 + x * 0.1) * 2;
-                    const h4 = heightMap[y + 1][x + 1] + Math.sin(time * 0.001 + (x + 1) * 0.1) * 2;
+            // Sample points and find contours
+            for (let y = 0; y < canvas.height; y += 5) {
+                for (let x = 0; x < canvas.width; x += 5) {
+                    const h1 = noise(x, y, time);
+                    const h2 = noise(x + 5, y, time);
+                    const h3 = noise(x, y + 5, time);
                     
-                    // Check if contour line passes through this cell
-                    const corners = [h1, h2, h3, h4];
-                    const minH = Math.min(...corners);
-                    const maxH = Math.max(...corners);
+                    // Check if contour crosses horizontally
+                    if ((h1 < level && h2 >= level) || (h1 >= level && h2 < level)) {
+                        const t = (level - h1) / (h2 - h1);
+                        paths.push({x: x + t * 5, y: y});
+                    }
                     
-                    if (elevation >= minH && elevation <= maxH) {
-                        // Draw contour segment
-                        const px = x * scaleX;
-                        const py = y * scaleY;
-                        
-                        if (h1 <= elevation && h2 > elevation) {
-                            const t = (elevation - h1) / (h2 - h1);
-                            ctx.lineTo(px + t * scaleX, py);
-                        }
-                        if (h2 <= elevation && h4 > elevation) {
-                            const t = (elevation - h2) / (h4 - h2);
-                            ctx.lineTo(px + scaleX, py + t * scaleY);
-                        }
-                        if (h3 <= elevation && h4 > elevation) {
-                            const t = (elevation - h3) / (h4 - h3);
-                            ctx.lineTo(px + t * scaleX, py + scaleY);
-                        }
-                        if (h1 <= elevation && h3 > elevation) {
-                            const t = (elevation - h1) / (h3 - h1);
-                            ctx.lineTo(px, py + t * scaleY);
-                        }
+                    // Check if contour crosses vertically
+                    if ((h1 < level && h3 >= level) || (h1 >= level && h3 < level)) {
+                        const t = (level - h1) / (h3 - h1);
+                        paths.push({x: x, y: y + t * 5});
                     }
                 }
             }
-            ctx.stroke();
+            
+            // Draw smooth curves through points
+            if (paths.length > 2) {
+                ctx.beginPath();
+                ctx.moveTo(paths[0].x, paths[0].y);
+                for (let i = 1; i < paths.length - 1; i++) {
+                    const xc = (paths[i].x + paths[i + 1].x) / 2;
+                    const yc = (paths[i].y + paths[i + 1].y) / 2;
+                    ctx.quadraticCurveTo(paths[i].x, paths[i].y, xc, yc);
+                }
+                ctx.stroke();
+            }
         }
         
         time++;
@@ -383,9 +364,16 @@ document.getElementById('exportICal').onclick = () => {
     let ics = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Yeah App//NONSGML v1.0//EN\n";
     data.forEach(c => {
         const d = new Date(c.timestamp).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+        const title = c.note ? c.note.split('\n')[0] : `${c.location.lat.toFixed(6)}, ${c.location.lng.toFixed(6)}`;
+        const location = c.note ? c.note.split('\n')[0] : `${c.location.lat.toFixed(6)}, ${c.location.lng.toFixed(6)}`;
+        const description = c.note || '';
+        
         ics += "BEGIN:VEVENT\n" +
-               `UID:${c.id}@yeah.app\nDTSTAMP:${d}\nDTSTART:${d}\nSUMMARY:Yeah¡ aquí\n` +
-               `DESCRIPTION:${c.note || ''}\nGEO:${c.location.lat};${c.location.lng}\nEND:VEVENT\n`;
+               `UID:${c.id}@yeah.app\nDTSTAMP:${d}\nDTSTART:${d}\n` +
+               `SUMMARY:${title} Yeah¡\n` +
+               `LOCATION:${location}\n` +
+               `DESCRIPTION:${description}\n` +
+               `GEO:${c.location.lat};${c.location.lng}\nEND:VEVENT\n`;
     });
     ics += "END:VCALENDAR";
     downloadFile(ics, 'yeah_calendar.ics', 'text/calendar');
