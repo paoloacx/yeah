@@ -4,7 +4,7 @@ const Maps = {
         const map = L.map(elementId).setView([lat, lng], zoom);
         
         // CartoDB Positron - estilo limpio y claro
-        L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/terrain/{z}/{x}/{y}.jpg', {
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
     attribution: 'Map tiles by Stamen Design, under CC BY 3.0. Data by OpenStreetMap, under ODbL',
             maxZoom: 19
         }).addTo(map);
