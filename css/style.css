@@ -97,7 +97,7 @@ body {
 .btn-secondary {
     background: white; color: var(--text-primary);
     border: 2px solid #ECEFF1;
-    box-shadow: 0 4px 10px -3px rgba(0,0,0,0.05);
+    box-shadow: 0 4px 10px -3px rgba(0,0,0,0.5);
 }
 .btn-primary:active, .btn-secondary:active { transform: scale(0.97); }
 
@@ -106,7 +106,7 @@ input, textarea, select {
     border: 1px solid rgba(0,0,0,0.08); border-radius: 16px;
     font-size: 1rem; color: var(--text-primary); font-family: inherit;
     margin-bottom: 1rem; transition: all 0.2s;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
 }
 input:focus, textarea:focus, select:focus {
     border-color: var(--primary-color); box-shadow: 0 4px 15px rgba(76, 175, 80, 0.15); outline: none;
@@ -122,7 +122,7 @@ input:focus, textarea:focus, select:focus {
 .place-results {
     max-height: 200px; overflow-y: auto; margin-top: 0.5rem;
     background: white; border-radius: 16px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
 }
 .place-item {
     padding: 0.8rem 1rem; border-bottom: 1px solid #f0f0f0;
@@ -138,7 +138,7 @@ input:focus, textarea:focus, select:focus {
 
 .checkin-item {
     background: #ffffff; border-radius: 22px; padding: 1.2rem;
-    margin-bottom: 1rem; box-shadow: 0 4px 15px -3px rgba(0,0,0,0.06);
+    margin-bottom: 1rem; box-shadow: 0 4px 15px -3px rgba(0,0,0,0.5);
 }
 .checkin-item .date-time {
     font-size: 0.85rem; color: #90A4AE; font-weight: 600;
@@ -168,13 +168,13 @@ input:focus, textarea:focus, select:focus {
 .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem; }
 .stat-card {
     background: white; padding: 1.5rem; border-radius: 24px;
-    text-align: center; box-shadow: 0 4px 15px -3px rgba(0,0,0,0.06);
+    text-align: center; box-shadow: 0 4px 15px -3px rgba(0,0,0,0.5);
 }
 .stat-number { font-size: 2.5rem; font-weight: 900; color: var(--primary-color); line-height: 1; }
 .stat-label { font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-top: 0.5rem; }
 .stats-section {
     background: white; border-radius: 24px; padding: 1.5rem;
-    margin-bottom: 1.5rem; box-shadow: 0 4px 15px -3px rgba(0,0,0,0.06);
+    margin-bottom: 1.5rem; box-shadow: 0 4px 15px -3px rgba(0,0,0,0.5);
 }
 .chart-bar { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.5rem; font-size: 0.9rem; }
 .bar-container { flex: 1; height: 10px; background: #ECEFF1; border-radius: 5px; overflow: hidden; }
