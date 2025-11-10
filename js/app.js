@@ -346,14 +346,13 @@ document.getElementById('exportICal').onclick = () => {
     let ics = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Yeah App//NONSGML v1.0//EN\n";
     data.forEach(c => {
         const d = new Date(c.timestamp).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-        const title = c.note ? c.note.split('\n')[0] : `${c.location.lat.toFixed(6)}, ${c.location.lng.toFixed(6)}`;
-        const location = c.note ? c.note.split('\n')[0] : `${c.location.lat.toFixed(6)}, ${c.location.lng.toFixed(6)}`;
+        const locationCoords = `${c.location.lat.toFixed(6)}, ${c.location.lng.toFixed(6)}`;
         const description = c.note || '';
         
         ics += "BEGIN:VEVENT\n" +
                `UID:${c.id}@yeah.app\nDTSTAMP:${d}\nDTSTART:${d}\n` +
-               `SUMMARY:${title} Yeah¡\n` +
-               `LOCATION:${location}\n` +
+               `SUMMARY:${locationCoords} Yeah¡\n` +
+               `LOCATION:${locationCoords}\n` +
                `DESCRIPTION:${description}\n` +
                `GEO:${c.location.lat};${c.location.lng}\nEND:VEVENT\n`;
     });
