@@ -132,7 +132,7 @@ document.getElementById('saveCheckin').onclick = () => {
         note: document.getElementById('placeNote').value.trim()
     };
     editingId ? Storage.updateCheckin(editingId, checkin) : Storage.saveCheckin(checkin);
-    showToast(editingId ? '¡Yeah actualizado! 😎' : '¡Yeah guardado! 🎉', 'success');
+    showToast(editingId ? '¡Yeah actualizado!' : '¡Yeah¡ guardado!', 'success');
     resetCheckin();
     CardStack.currentIndex = 0; CardStack.updatePositions();
     if (mainMap) { Maps.addCheckinsToMap(mainMap, Storage.getAllCheckins()); mainMap.setView([checkin.location.lat, checkin.location.lng], 16); }
