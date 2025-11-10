@@ -121,6 +121,34 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
+    // Dark mode toggle
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    const savedTheme = localStorage.getItem('theme');
+    
+    if (savedTheme === 'dark') {
+        document.body.classList.add('dark-mode');
+        darkModeToggle.checked = true;
+    } else if (savedTheme === 'light') {
+        document.body.classList.remove('dark-mode');
+        darkModeToggle.checked = false;
+    } else {
+        // Auto detect system preference
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            darkModeToggle.checked = true;
+        }
+    }
+    
+    darkModeToggle.addEventListener('change', (e) => {
+        if (e.target.checked) {
+            document.body.classList.add('dark-mode');
+            localStorage.setItem('theme', 'dark');
+        } else {
+            document.body.classList.remove('dark-mode');
+            localStorage.setItem('theme', 'light');
+        }
+        if ('vibrate' in navigator) navigator.vibrate(30);
+    });
+    
     // Hide loader after app is ready
     setTimeout(() => {
         const loader = document.getElementById('loader');
