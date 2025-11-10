@@ -57,11 +57,29 @@ const CardStack = {
         this.cards[this.currentIndex].classList.remove('dragging');
         this.cards[this.currentIndex].style.transform = '';
         if (this.hasMoved && Math.abs(this.currentX - this.startX) > 80) {
-            (this.currentX - this.startX) > 0 ? this.prev() : this.next();
+            // Check for unsaved changes before navigating away from checkin card
+            if (this.currentIndex === 1 && hasUnsavedChanges) {
+                if (confirm('Tienes cambios sin guardar. ¿Salir sin guardar?')) {
+                    hasUnsavedChanges = false;
+                    (this.currentX - this.startX) > 0 ? this.prev() : this.next();
+                }
+            } else {
+                (this.currentX - this.startX) > 0 ? this.prev() : this.next();
+            }
         }
     },
-    next() { this.currentIndex = (this.currentIndex + 1) % this.totalCards; this.updatePositions(); this.loadCardContent(this.currentIndex); },
-    prev() { this.currentIndex = (this.currentIndex - 1 + this.totalCards) % this.totalCards; this.updatePositions(); this.loadCardContent(this.currentIndex); },
+    next() { 
+        this.currentIndex = (this.currentIndex + 1) % this.totalCards; 
+        this.updatePositions(); 
+        this.loadCardContent(this.currentIndex);
+        if ('vibrate' in navigator) navigator.vibrate(30);
+    },
+    prev() { 
+        this.currentIndex = (this.currentIndex - 1 + this.totalCards) % this.totalCards; 
+        this.updatePositions(); 
+        this.loadCardContent(this.currentIndex);
+        if ('vibrate' in navigator) navigator.vibrate(30);
+    },
     updatePositions() {
         this.cards.forEach((c, i) => {
             let pos = (i - this.currentIndex + this.totalCards) % this.totalCards;
@@ -85,10 +103,23 @@ const CardStack = {
 // --- App Globals & Init ---
 let mainMap, checkinMap, detailsMap, heatMapInstance, currentPos, editingId = null, watchId = null, marker = null;
 let currentPhoto = null;
+let hasUnsavedChanges = false;
 
 document.addEventListener('DOMContentLoaded', () => {
     CardStack.init();
     initTopoBackground();
+    
+    // Track unsaved changes
+    document.getElementById('placeNote').addEventListener('input', () => hasUnsavedChanges = true);
+    document.getElementById('photoInput').addEventListener('change', () => hasUnsavedChanges = true);
+    
+    // Warn before leaving with unsaved changes
+    window.addEventListener('beforeunload', (e) => {
+        if (hasUnsavedChanges && CardStack.currentIndex === 1) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
 });
 
 // --- Topographic Background ---
@@ -155,6 +186,24 @@ function initMainMap() {
 function createMain(lat, lng) {
     mainMap = Maps.createMap('map', lat, lng, 13);
     Maps.addCheckinsToMap(mainMap, Storage.getAllCheckins());
+    
+    // Center map button
+    document.getElementById('centerMapBtn').onclick = () => {
+        const btn = document.getElementById('centerMapBtn');
+        btn.classList.add('loading');
+        navigator.geolocation.getCurrentPosition(
+            p => {
+                mainMap.setView([p.coords.latitude, p.coords.longitude], 16);
+                btn.classList.remove('loading');
+                if ('vibrate' in navigator) navigator.vibrate(50);
+            },
+            () => {
+                btn.classList.remove('loading');
+                showToast('No se pudo obtener ubicación', 'error');
+            },
+            {enableHighAccuracy: true}
+        );
+    };
 }
 function updateQuickStats() {
     const checkins = Storage.getAllCheckins();
@@ -165,6 +214,7 @@ function updateQuickStats() {
 function resetCheckin() {
     editingId = null;
     currentPhoto = null;
+    hasUnsavedChanges = false;
     document.getElementById('cardTitleCheckin').textContent = 'Nuevo Yeah¡';
     document.getElementById('saveCheckin').textContent = 'Guardar Yeah¡';
     document.getElementById('placeNote').value = '';
@@ -195,7 +245,28 @@ function updateLoc(lat, lng) {
             watchId = null;
             updateLoc(e.latlng.lat, e.latlng.lng);
             showToast('Ubicación fijada manualmente');
+            if ('vibrate' in navigator) navigator.vibrate(50);
         });
+        
+        // Center preview button
+        document.getElementById('centerPreviewBtn').onclick = () => {
+            const btn = document.getElementById('centerPreviewBtn');
+            btn.classList.add('loading');
+            navigator.geolocation.getCurrentPosition(
+                p => {
+                    if (watchId) navigator.geolocation.clearWatch(watchId);
+                    watchId = null;
+                    updateLoc(p.coords.latitude, p.coords.longitude);
+                    btn.classList.remove('loading');
+                    if ('vibrate' in navigator) navigator.vibrate(50);
+                },
+                () => {
+                    btn.classList.remove('loading');
+                    showToast('No se pudo obtener ubicación', 'error');
+                },
+                {enableHighAccuracy: true}
+            );
+        };
     }
     checkinMap.setView([lat, lng], 16);
     if (marker) marker.remove();
@@ -283,7 +354,11 @@ document.getElementById('saveCheckin').onclick = () => {
         photo: currentPhoto
     };
     editingId ? Storage.updateCheckin(editingId, checkin) : Storage.saveCheckin(checkin);
+    
+    if ('vibrate' in navigator) navigator.vibrate([50, 100, 50]);
+    
     showToast(editingId ? '¡Yeah actualizado!' : '¡Yeah¡ guardado!', 'success');
+    hasUnsavedChanges = false;
     resetCheckin();
     CardStack.currentIndex = 0; CardStack.updatePositions();
     if (mainMap) { Maps.addCheckinsToMap(mainMap, Storage.getAllCheckins()); mainMap.setView([checkin.location.lat, checkin.location.lng], 16); }
