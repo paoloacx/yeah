@@ -1,4 +1,5 @@
-const CACHE_NAME = 'yeah-v2';
+const CACHE_NAME = 'yeah-v3';
+const TILES_CACHE = 'yeah-tiles-v1';
 const urlsToCache = [
   './',
   './index.html',
@@ -19,15 +20,30 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Ignorar peticiones de extensiones y protocolos no HTTP
   if (!event.request.url.startsWith('http')) {
     return;
   }
 
-  // Ignorar peticiones a APIs externas (Nominatim, Leaflet, etc)
-  if (event.request.url.includes('nominatim.openstreetmap.org') ||
-      event.request.url.includes('unpkg.com') ||
+  // Cache map tiles with stale-while-revalidate
+  if (event.request.url.includes('basemaps.cartocdn.com') || 
       event.request.url.includes('tile.openstreetmap.org')) {
+    event.respondWith(
+      caches.open(TILES_CACHE).then((cache) => {
+        return cache.match(event.request).then((cachedResponse) => {
+          const fetchPromise = fetch(event.request).then((networkResponse) => {
+            cache.put(event.request, networkResponse.clone());
+            return networkResponse;
+          }).catch(() => cachedResponse);
+          return cachedResponse || fetchPromise;
+        });
+      })
+    );
+    return;
+  }
+
+  // Ignore external APIs (Nominatim, Leaflet CDN)
+  if (event.request.url.includes('nominatim.openstreetmap.org') ||
+      event.request.url.includes('unpkg.com')) {
     event.respondWith(fetch(event.request));
     return;
   }
@@ -39,7 +55,6 @@ self.addEventListener('fetch', (event) => {
           return response;
         }
         return fetch(event.request).catch(() => {
-          // Si falla, devolver index.html para rutas de la app
           if (event.request.mode === 'navigate') {
             return caches.match('./index.html');
           }
@@ -53,7 +68,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
+          if (cacheName !== CACHE_NAME && cacheName !== TILES_CACHE) {
             return caches.delete(cacheName);
           }
         })
