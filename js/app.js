@@ -86,7 +86,69 @@ const CardStack = {
 let mainMap, checkinMap, detailsMap, heatMapInstance, currentPos, editingId = null, watchId = null, marker = null;
 let currentPhoto = null;
 
-document.addEventListener('DOMContentLoaded', () => CardStack.init());
+document.addEventListener('DOMContentLoaded', () => {
+    CardStack.init();
+    initTopoBackground();
+});
+
+// --- Topographic Background ---
+function initTopoBackground() {
+    const canvas = document.getElementById('topoCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    
+    const resize = () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    };
+    resize();
+    window.addEventListener('resize', resize);
+    
+    const lines = [];
+    const numLines = 15;
+    for (let i = 0; i < numLines; i++) {
+        lines.push({
+            points: [],
+            baseY: (canvas.height / numLines) * i,
+            phase: Math.random() * Math.PI * 2,
+            speed: 0.0005 + Math.random() * 0.001,
+            amplitude: 30 + Math.random() * 50
+        });
+    }
+    
+    const numPoints = 50;
+    for (let line of lines) {
+        for (let i = 0; i <= numPoints; i++) {
+            line.points.push({
+                x: (canvas.width / numPoints) * i,
+                offset: Math.random() * Math.PI * 2
+            });
+        }
+    }
+    
+    let time = 0;
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.lineWidth = 1.5;
+        
+        for (let line of lines) {
+            ctx.beginPath();
+            for (let i = 0; i < line.points.length; i++) {
+                const point = line.points[i];
+                const y = line.baseY + Math.sin(time * line.speed + point.offset + line.phase) * line.amplitude;
+                
+                if (i === 0) ctx.moveTo(point.x, y);
+                else ctx.lineTo(point.x, y);
+            }
+            ctx.stroke();
+        }
+        
+        time++;
+        requestAnimationFrame(animate);
+    }
+    animate();
+}
 
 // --- Maps & Location ---
 function initMainMap() {
@@ -117,6 +179,10 @@ function resetCheckin() {
     document.getElementById('photoPreview').src = '#';
     document.getElementById('placeSearch').value = '';
     document.getElementById('placeResults').innerHTML = '';
+    
+    const now = new Date();
+    document.getElementById('checkinDate').value = now.toISOString().split('T')[0];
+    document.getElementById('checkinTime').value = now.toTimeString().slice(0, 5);
     
     if (watchId) navigator.geolocation.clearWatch(watchId);
     watchId = navigator.geolocation.watchPosition(
@@ -202,9 +268,20 @@ document.getElementById('photoInput').addEventListener('change', function(e) {
 // --- Actions ---
 document.getElementById('saveCheckin').onclick = () => {
     if (!currentPos) return showToast('Falta ubicación', 'error');
+    
+    const dateValue = document.getElementById('checkinDate').value;
+    const timeValue = document.getElementById('checkinTime').value;
+    let timestamp;
+    
+    if (dateValue && timeValue) {
+        timestamp = new Date(`${dateValue}T${timeValue}`).toISOString();
+    } else {
+        timestamp = editingId ? Storage.getCheckin(editingId).timestamp : new Date().toISOString();
+    }
+    
     const checkin = {
         id: editingId || Date.now(),
-        timestamp: editingId ? Storage.getCheckin(editingId).timestamp : new Date().toISOString(),
+        timestamp: timestamp,
         location: currentPos,
         note: document.getElementById('placeNote').value.trim(),
         photo: currentPhoto
@@ -223,6 +300,11 @@ window.editCheckin = (id) => {
     document.getElementById('cardTitleCheckin').textContent = 'Editando Yeah¡';
     document.getElementById('saveCheckin').textContent = 'Actualizar Yeah¡';
     document.getElementById('placeNote').value = c.note || '';
+    
+    const checkinDate = new Date(c.timestamp);
+    document.getElementById('checkinDate').value = checkinDate.toISOString().split('T')[0];
+    document.getElementById('checkinTime').value = checkinDate.toTimeString().slice(0, 5);
+    
     if (currentPhoto) {
         document.getElementById('photoPreview').src = currentPhoto;
         document.getElementById('photoPreview').style.display = 'block';
