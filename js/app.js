@@ -1,3 +1,4 @@
+// --- Toast System ---
 function showToast(msg, type = 'normal') {
     let container = document.getElementById('toast-container');
     if (!container) {
@@ -7,15 +8,16 @@ function showToast(msg, type = 'normal') {
     }
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
-    toast.textContent = msg; // Usar textContent para evitar inyección HTML si no es necesaria, más seguro y limpio sin emojis
+    toast.innerHTML = msg;
     container.appendChild(toast);
     setTimeout(() => {
         toast.style.opacity = '0';
-        toast.style.transform = 'translateY(-30px) scale(0.9)';
+        toast.style.transform = 'translateY(-20px)';
         setTimeout(() => toast.remove(), 300);
-    }, 3500);
+    }, 3000);
 }
 
+// --- Card Engine ---
 const CardStack = {
     currentIndex: 0, cards: [],
     startX: 0, currentX: 0, isDragging: false, hasMoved: false,
@@ -36,7 +38,7 @@ const CardStack = {
         s.addEventListener('mouseup', () => this.dragEnd());
     },
     dragStart(e) {
-        if (e.target.closest('.leaflet-container, button, input, textarea, select, .checkin-actions, .place-results')) return;
+        if (e.target.closest('.leaflet-container, button, input, textarea, .checkin-actions')) return;
         this.isDragging = true; this.hasMoved = false;
         this.startX = e.clientX;
         this.cards[this.currentIndex].classList.add('dragging');
@@ -70,18 +72,17 @@ const CardStack = {
     loadCardContent(i) {
         const type = this.cards[i].dataset.card;
         if (type === 'map') window.mainMap ? setTimeout(() => window.mainMap.invalidateSize(), 200) : initMainMap();
-        if (type === 'checkin' && !window.editingId) resetCheckinForm();
+        if (type === 'checkin' && !window.editingId) resetCheckin();
         if (type === 'history') loadHistory();
-        if (type === 'stats') loadStats();
-        if (type === 'settings') initSettings();
+        if (type === 'stats') loadStats(); // Carga las estadísticas completas
     }
 };
 
+// --- App Globals & Init ---
 let mainMap, checkinMap, heatMapInstance, currentPos, editingId = null, watchId = null, marker = null;
-let selectedPlace = null;
-
 document.addEventListener('DOMContentLoaded', () => CardStack.init());
 
+// --- Maps & Location ---
 function initMainMap() {
     if (mainMap) return;
     navigator.geolocation.getCurrentPosition(
@@ -93,19 +94,11 @@ function createMain(lat, lng) {
     mainMap = Maps.createMap('map', lat, lng, 13);
     Maps.addCheckinsToMap(mainMap, Storage.getAllCheckins());
 }
-
-function resetCheckinForm() {
-    editingId = null; selectedPlace = null;
+function resetCheckin() {
+    editingId = null;
     document.getElementById('cardTitleCheckin').textContent = 'Nuevo Yeah¡';
     document.getElementById('saveCheckin').textContent = 'Guardar Yeah¡';
     document.getElementById('placeNote').value = '';
-    document.getElementById('placeSearch').value = '';
-    document.getElementById('placeResults').innerHTML = '';
-    document.getElementById('dateTimeSection').style.display = 'none';
-    document.getElementById('cancelEdit').style.display = 'none';
-    startWatch();
-}
-function startWatch() {
     if (watchId) navigator.geolocation.clearWatch(watchId);
     watchId = navigator.geolocation.watchPosition(
         p => updateLoc(p.coords.latitude, p.coords.longitude, 'Ubicación GPS activa'),
@@ -119,8 +112,9 @@ function updateLoc(lat, lng, msg) {
     if (!checkinMap) {
         checkinMap = Maps.createMap('mapPreview', lat, lng, 16);
         checkinMap.on('click', e => {
-            if (watchId) navigator.geolocation.clearWatch(watchId); watchId = null;
-            updateLoc(e.latlng.lat, e.latlng.lng, 'Ubicación manual fijada');
+            if (watchId) navigator.geolocation.clearWatch(watchId);
+            watchId = null;
+            updateLoc(e.latlng.lat, e.latlng.lng, '📍 Ubicación manual fijada');
         });
     }
     checkinMap.setView([lat, lng], 16);
@@ -128,103 +122,58 @@ function updateLoc(lat, lng, msg) {
     marker = Maps.addMarker(checkinMap, lat, lng);
 }
 
-document.getElementById('searchBtn').onclick = async () => {
-    const q = document.getElementById('placeSearch').value.trim();
-    const resultsDiv = document.getElementById('placeResults');
-    if (q.length < 3) return showToast('Escribe al menos 3 letras', 'error');
-    resultsDiv.innerHTML = '<div style="padding:1rem;opacity:0.6">Buscando...</div>';
-    try {
-        let url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=5`;
-        if (currentPos) url += `&viewbox=${currentPos.lng-0.1},${currentPos.lat-0.1},${currentPos.lng+0.1},${currentPos.lat+0.1}`;
-        const res = await fetch(url); const data = await res.json();
-        resultsDiv.innerHTML = data.length ? data.map((p, i) => `
-            <div class="place-item" data-idx="${i}">${p.display_name.split(',')[0]}</div>
-        `).join('') : '<div style="padding:1rem;opacity:0.6">Sin resultados</div>';
-        resultsDiv.querySelectorAll('.place-item').forEach(item => {
-            item.onclick = () => {
-                const p = data[item.dataset.idx];
-                selectedPlace = { name: p.display_name.split(',')[0], lat: parseFloat(p.lat), lng: parseFloat(p.lon) };
-                document.getElementById('placeSearch').value = selectedPlace.name;
-                resultsDiv.innerHTML = '';
-                if (watchId) navigator.geolocation.clearWatch(watchId); watchId = null;
-                updateLoc(selectedPlace.lat, selectedPlace.lng, selectedPlace.name);
-            };
-        });
-    } catch (e) { resultsDiv.innerHTML = '<div style="padding:1rem;color:var(--danger-color)">Error al buscar</div>'; }
-};
-
+// --- Actions ---
 document.getElementById('saveCheckin').onclick = () => {
     if (!currentPos) return showToast('Falta ubicación', 'error');
-    let timestamp = new Date().toISOString();
-    if (editingId) {
-        const dateVal = document.getElementById('editDate').value;
-        const timeVal = document.getElementById('editTime').value;
-        if (dateVal && timeVal) timestamp = new Date(`${dateVal}T${timeVal}`).toISOString();
-    }
     const checkin = {
         id: editingId || Date.now(),
-        timestamp: timestamp,
+        timestamp: editingId ? Storage.getCheckin(editingId).timestamp : new Date().toISOString(),
         location: currentPos,
-        note: document.getElementById('placeNote').value.trim(),
-        place: selectedPlace
+        note: document.getElementById('placeNote').value.trim()
     };
     editingId ? Storage.updateCheckin(editingId, checkin) : Storage.saveCheckin(checkin);
-    showToast(editingId ? 'Yeah actualizado' : 'Yeah guardado', 'success');
-    resetCheckinForm();
+    showToast(editingId ? '¡Yeah actualizado! 😎' : '¡Yeah guardado! 🎉', 'success');
+    resetCheckin();
     CardStack.currentIndex = 0; CardStack.updatePositions();
-    if (mainMap) { Maps.addCheckinsToMap(mainMap, Storage.getAllCheckins()); mainMap.setView([currentPos.lat, currentPos.lng], 16); }
+    if (mainMap) { Maps.addCheckinsToMap(mainMap, Storage.getAllCheckins()); mainMap.setView([checkin.location.lat, checkin.location.lng], 16); }
     CardStack.loadCardContent(0);
-};
-
-document.getElementById('cancelEdit').onclick = () => {
-    resetCheckinForm(); CardStack.currentIndex = 2; CardStack.updatePositions();
 };
 
 window.editCheckin = (id) => {
     const c = Storage.getCheckin(id); if (!c) return;
-    editingId = id; currentPos = c.location; selectedPlace = c.place;
+    editingId = id; currentPos = c.location;
     document.getElementById('cardTitleCheckin').textContent = 'Editando Yeah¡';
     document.getElementById('saveCheckin').textContent = 'Actualizar Yeah¡';
     document.getElementById('placeNote').value = c.note || '';
-    document.getElementById('placeSearch').value = c.place ? c.place.name : '';
-    document.getElementById('cancelEdit').style.display = 'block';
-    const dateObj = new Date(c.timestamp);
-    document.getElementById('dateTimeSection').style.display = 'flex';
-    const localIso = new Date(dateObj.getTime() - (dateObj.getTimezoneOffset() * 60000)).toISOString();
-    document.getElementById('editDate').value = localIso.slice(0, 10);
-    document.getElementById('editTime').value = localIso.slice(11, 16);
     CardStack.currentIndex = 1; CardStack.updatePositions();
     setTimeout(() => {
         if (!checkinMap) checkinMap = Maps.createMap('mapPreview', 0, 0, 16);
         if (watchId) navigator.geolocation.clearWatch(watchId); watchId = null;
-        updateLoc(c.location.lat, c.location.lng, 'Editando original');
+        updateLoc(c.location.lat, c.location.lng, 'Editando ubicación original');
     }, 300);
 };
 
 window.deleteCheckin = (id) => {
-    if (confirm('¿Eliminar para siempre?')) {
+    if (confirm('¿Eliminar este Yeah para siempre?')) {
         Storage.deleteCheckin(id); loadHistory();
         if (mainMap) Maps.addCheckinsToMap(mainMap, Storage.getAllCheckins());
-        showToast('Yeah eliminado');
+        showToast('Yeah eliminado 🗑️');
     }
 };
 
+// --- History & Stats (RESTAURADAS) ---
 function loadHistory() {
-    let checkins = Storage.getAllCheckins();
-    const search = document.getElementById('searchFilter').value.toLowerCase();
-    const sort = document.getElementById('sortFilter').value;
-    if (search) checkins = checkins.filter(c => (c.note||'').toLowerCase().includes(search) || (c.place?.name||'').toLowerCase().includes(search));
-    checkins.sort((a,b) => sort === 'newest' ? new Date(b.timestamp) - new Date(a.timestamp) : new Date(a.timestamp) - new Date(b.timestamp));
     const list = document.getElementById('checkinsList');
-    document.getElementById('emptyState').style.display = checkins.length ? 'none' : 'block';
-    list.style.display = checkins.length ? 'block' : 'none';
+    const all = Storage.getAllCheckins().sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+    document.getElementById('emptyState').style.display = all.length ? 'none' : 'block';
+    list.style.display = all.length ? 'block' : 'none';
     const dF = new Intl.DateTimeFormat('es-ES', {day:'numeric', month:'short', year:'numeric'});
     const tF = new Intl.DateTimeFormat('es-ES', {hour:'2-digit', minute:'2-digit'});
-    list.innerHTML = checkins.map(c => `
+    
+    list.innerHTML = all.map(c => `
         <div class="checkin-item">
             <span class="date-time">${dF.format(new Date(c.timestamp))} • ${tF.format(new Date(c.timestamp))}</span>
-            ${c.place ? `<strong style="display:block;margin-bottom:0.3rem;color:var(--primary-dark)">📍 ${c.place.name}</strong>` : ''}
-            ${c.note ? `<p class="note-text">${c.note}</p>` : ''}
+            ${c.note ? `<p class="note-text">${c.note}</p>` : '<p class="note-text" style="opacity:0.5">Sin nota</p>'}
             <span class="location-coords">${c.location.lat.toFixed(4)}, ${c.location.lng.toFixed(4)}</span>
             <div class="checkin-actions">
                 <button class="btn-icon edit" onclick="editCheckin(${c.id})">✏️</button>
@@ -233,58 +182,48 @@ function loadHistory() {
         </div>
     `).join('');
 }
-document.getElementById('searchFilter').oninput = loadHistory;
-document.getElementById('sortFilter').onchange = loadHistory;
 
 function loadStats() {
-    const all = Storage.getAllCheckins();
-    document.getElementById('statTotal').textContent = all.length;
-    document.getElementById('statPlaces').textContent = new Set(all.map(c => `${c.location.lat.toFixed(3)},${c.location.lng.toFixed(3)}`)).size;
-    document.getElementById('statNotes').textContent = all.filter(c => c.note && c.note.trim()).length;
-    const places = {}; all.forEach(c => { const k = c.place ? c.place.name : `${c.location.lat.toFixed(3)}, ${c.location.lng.toFixed(3)}`; places[k] = (places[k]||0)+1; });
-    const sorted = Object.entries(places).sort((a,b) => b[1]-a[1]).slice(0,5);
-    document.getElementById('topPlaces').innerHTML = sorted.length ? sorted.map(([k,v]) => 
-        `<div class="top-item"><span>${k.includes(',')?'📍':'🏢'} ${k}</span><strong>${v}</strong></div>`).join('') : '<p style="opacity:0.6">Sin datos</p>';
-    loadChart(all, 'monthlyChart', c => new Date(c.timestamp).toISOString().slice(0,7), k => {
-        const [y,m] = k.split('-'); return new Date(y,m-1).toLocaleDateString('es-ES',{month:'short'});
+    const checkins = Storage.getAllCheckins();
+    // Totales
+    document.getElementById('statTotal').textContent = checkins.length;
+    document.getElementById('statPlaces').textContent = new Set(checkins.map(c => `${c.location.lat.toFixed(3)},${c.location.lng.toFixed(3)}`)).size;
+    document.getElementById('statNotes').textContent = checkins.filter(c => c.note && c.note.trim()).length;
+    
+    // Lugares Top
+    const places = {}; checkins.forEach(c => { const k = `${c.location.lat.toFixed(3)}, ${c.location.lng.toFixed(3)}`; places[k] = (places[k]||0)+1; });
+    const sortedPlaces = Object.entries(places).sort((a,b) => b[1]-a[1]).slice(0,5);
+    document.getElementById('topPlaces').innerHTML = sortedPlaces.length ? sortedPlaces.map(([k,v]) => 
+        `<div class="top-item"><span>📍 ${k}</span><span class="place-count">${v}</span></div>`).join('') : '<p style="opacity:0.6;text-align:center">Sin datos</p>';
+
+    // Gráficos
+    loadChart(checkins, 'monthlyChart', c => new Date(c.timestamp).toISOString().slice(0,7), (k) => {
+        const [y, m] = k.split('-'); return new Date(y, m-1).toLocaleDateString('es-ES',{month:'short'});
     });
-    loadChart(all, 'weekdayChart', c => new Date(c.timestamp).getDay(), k => ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'][k]);
+    loadChart(checkins, 'weekdayChart', c => new Date(c.timestamp).getDay(), k => ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'][k]);
+    
+    // Mapa de Calor (Fix para SPA)
     if (heatMapInstance) { heatMapInstance.remove(); heatMapInstance = null; }
-    if (all.length) {
+    if (checkins.length > 0) {
          heatMapInstance = Maps.createMap('heatMap', 40.4168, -3.7038, 5);
-         L.heatLayer(all.map(c => [c.location.lat, c.location.lng]), {radius: 25, blur: 15}).addTo(heatMapInstance);
-         heatMapInstance.fitBounds(all.map(c => [c.location.lat, c.location.lng]));
-    } else { document.getElementById('heatMap').innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;opacity:0.5">Sin datos</div>'; }
-}
-function loadChart(data, id, kFn, lFn) {
-    const counts = {}; data.forEach(d => { const k = kFn(d); counts[k] = (counts[k]||0)+1; });
-    const sorted = Object.entries(counts).sort(); const max = Math.max(...Object.values(counts), 1);
-    document.getElementById(id).innerHTML = sorted.length ? sorted.map(([k,v]) => `
-        <div class="chart-bar"><span style="width:40px;text-align:right">${lFn(k)}</span>
-        <div class="bar-container"><div class="bar-fill" style="width:${(v/max)*100}%"></div></div>
-        <span style="width:25px">${v}</span></div>`).join('') : '<p style="opacity:0.6">Sin datos</p>';
+         const bounds = [];
+         checkins.forEach(c => {
+             const lat = c.location.lat, lng = c.location.lng;
+             bounds.push([lat, lng]);
+             L.circleMarker([lat, lng], { radius: 15, fillColor: '#FF5722', color: false, fillOpacity: 0.3 }).addTo(heatMapInstance);
+         });
+         heatMapInstance.fitBounds(bounds, {padding:[20,20]});
+    } else {
+        document.getElementById('heatMap').innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;opacity:0.5">Sin datos de ubicación</div>';
+    }
 }
 
-function initSettings() {
-    document.getElementById('exportCSV').onclick = () => Export.toCSV();
-    document.getElementById('exportICal').onclick = () => Export.toICal();
-    document.getElementById('exportJSON').onclick = () => Export.toJSON();
-    document.getElementById('importJSON').onclick = () => document.getElementById('importFile').click();
-    document.getElementById('importFile').onchange = (e) => {
-        const file = e.target.files[0]; if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-            try {
-                const data = JSON.parse(ev.target.result);
-                if (data.checkins && Array.isArray(data.checkins)) {
-                    if (confirm(`¿Importar ${data.checkins.length} Yeahs?`)) {
-                        data.checkins.forEach(c => Storage.saveCheckin(c));
-                        showToast('Importación completada', 'success');
-                        if (mainMap) Maps.addCheckinsToMap(mainMap, Storage.getAllCheckins());
-                    }
-                } else alert('JSON inválido');
-            } catch (ex) { alert('Error al leer archivo'); }
-        };
-        reader.readAsText(file);
-    };
+function loadChart(data, id, keyFn, labelFn) {
+    const counts = {}; data.forEach(d => { const k = keyFn(d); counts[k] = (counts[k]||0)+1; });
+    const sorted = Object.entries(counts).sort();
+    const max = Math.max(...Object.values(counts), 1);
+    document.getElementById(id).innerHTML = sorted.length ? sorted.map(([k,v]) => `
+        <div class="chart-bar"><span class="bar-label">${labelFn(k)}</span>
+        <div class="bar-container"><div class="bar-fill" style="width:${(v/max)*100}%"></div></div>
+        <span class="bar-value">${v}</span></div>`).join('') : '<p style="opacity:0.6;text-align:center">Sin datos</p>';
 }
