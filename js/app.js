@@ -106,7 +106,6 @@ function updateQuickStats() {
     document.getElementById('quickStats').innerHTML = 
         `Llevas <strong>${checkins.length}</strong> Yeahs¡ en <strong>${places}</strong> lugares distintos.`;
 }
-
 function resetCheckin() {
     editingId = null;
     currentPhoto = null;
@@ -127,7 +126,6 @@ function resetCheckin() {
 }
 function updateLoc(lat, lng) {
     currentPos = {lat, lng};
-    // Ya no actualizamos textos de estado porque los hemos borrado del HTML
     if (!checkinMap) {
         checkinMap = Maps.createMap('mapPreview', lat, lng, 16);
         checkinMap.on('click', e => {
@@ -146,14 +144,12 @@ function updateLoc(lat, lng) {
 document.getElementById('photoInput').addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (!file) return;
-    
     const reader = new FileReader();
     reader.onload = (event) => {
         const img = new Image();
         img.onload = () => {
             const canvas = document.createElement('canvas');
-            let width = img.width;
-            let height = img.height;
+            let width = img.width; let height = img.height;
             if (width > 800 || height > 800) {
                 if (width > height) { height *= 800 / width; width = 800; }
                 else { width *= 800 / height; height = 800; }
@@ -190,20 +186,16 @@ document.getElementById('saveCheckin').onclick = () => {
 
 window.editCheckin = (id) => {
     const c = Storage.getCheckin(id); if (!c) return;
-    editingId = id; currentPos = c.location;
-    currentPhoto = c.photo || null;
-    
+    editingId = id; currentPos = c.location; currentPhoto = c.photo || null;
     document.getElementById('cardTitleCheckin').textContent = 'Editando Yeah¡';
     document.getElementById('saveCheckin').textContent = 'Actualizar Yeah¡';
     document.getElementById('placeNote').value = c.note || '';
-    
     if (currentPhoto) {
         document.getElementById('photoPreview').src = currentPhoto;
         document.getElementById('photoPreview').style.display = 'block';
     } else {
         document.getElementById('photoPreview').style.display = 'none';
     }
-    
     CardStack.currentIndex = 1; CardStack.updatePositions();
     setTimeout(() => {
         if (!checkinMap) checkinMap = Maps.createMap('mapPreview', 0, 0, 16);
@@ -211,6 +203,69 @@ window.editCheckin = (id) => {
         updateLoc(c.location.lat, c.location.lng);
     }, 300);
 };
+
+// --- Settings & Data Management (NUEVO: Integrado aquí para asegurar funcionamiento) ---
+document.getElementById('exportCSV').onclick = () => {
+    const data = Storage.getAllCheckins();
+    if (!data.length) return showToast('No hay datos', 'normal');
+    const csv = 'lat,lng,date,time,note\n' + data.map(c => {
+        const d = new Date(c.timestamp);
+        return `${c.location.lat},${c.location.lng},${d.toLocaleDateString()},${d.toLocaleTimeString()},"${(c.note || '').replace(/"/g, '""')}"`;
+    }).join('\n');
+    downloadFile(csv, 'yeah_backup.csv', 'text/csv');
+    showToast('CSV descargado');
+};
+
+document.getElementById('exportJSON').onclick = () => {
+    const data = Storage.getAllCheckins();
+    if (!data.length) return showToast('No hay datos', 'normal');
+    downloadFile(JSON.stringify(data, null, 2), `yeah_backup_${new Date().toISOString().slice(0,10)}.json`, 'application/json');
+    showToast('Copia JSON descargada');
+};
+
+document.getElementById('exportICal').onclick = () => {
+    const data = Storage.getAllCheckins();
+    if (!data.length) return showToast('No hay datos', 'normal');
+    let ics = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Yeah App//NONSGML v1.0//EN\n";
+    data.forEach(c => {
+        const d = new Date(c.timestamp).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+        ics += "BEGIN:VEVENT\n" +
+               `UID:${c.id}@yeah.app\nDTSTAMP:${d}\nDTSTART:${d}\nSUMMARY:Yeah¡ aquí\n` +
+               `DESCRIPTION:${c.note || ''}\nGEO:${c.location.lat};${c.location.lng}\nEND:VEVENT\n`;
+    });
+    ics += "END:VCALENDAR";
+    downloadFile(ics, 'yeah_calendar.ics', 'text/calendar');
+    showToast('Calendario descargado');
+};
+
+document.getElementById('importJSON').onclick = () => document.getElementById('importFile').click();
+document.getElementById('importFile').onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+        try {
+            const data = JSON.parse(ev.target.result);
+            if (Array.isArray(data)) {
+                if (confirm(`¿Importar ${data.length} Yeahs? Se fusionarán con los actuales.`)) {
+                    data.forEach(c => Storage.saveCheckin(c));
+                    showToast('¡Datos importados correctamente!', 'success');
+                    setTimeout(() => location.reload(), 1500);
+                }
+            } else showToast('Formato JSON inválido', 'error');
+        } catch (err) { showToast('Error al leer el archivo', 'error'); }
+    };
+    reader.readAsText(file);
+};
+
+function downloadFile(content, fileName, contentType) {
+    const a = document.createElement("a");
+    const file = new Blob([content], { type: contentType });
+    a.href = URL.createObjectURL(file);
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(a.href);
+}
 
 // --- History & Details Modal ---
 function loadHistory() {
