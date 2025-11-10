@@ -5,7 +5,7 @@
     --text-primary: #263238;
     --text-secondary: #78909C;
     --card-bg: #ffffff;
-    --bg-color: #1a1a1a; /* Fondo base más oscuro */
+    --bg-color: #1a1a1a;
     --radius-card: 32px;
 }
 
@@ -23,27 +23,23 @@ body {
     overflow: hidden; touch-action: pan-y;
 }
 
-/* FONDO TOPOGRÁFICO ANIMADO */
+/* FONDO TOPOGRÁFICO ANIMADO (Opacidad aumentada) */
 #background {
     position: fixed; inset: 0; z-index: -1;
     background-color: var(--bg-color);
     overflow: hidden;
 }
-
-/* Capa 1: Líneas topográficas moviéndose lentamente */
 #background::before {
     content: ""; position: absolute; inset: -50%;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 800 800'%3E%3Cg fill='none' stroke='%23ffffff' stroke-width='1.5' opacity='0.06'%3E%3Cpath d='M769 229L1037 260.9M927 880L731 737 520 660 309 538 40 599 295 764 126 552 56 243 35 58 178 68 256 65 327 20 390 130 550 110 620 60 810 140 880 310 780 440 815 635 920 690 890 840 680 910 440 890 280 920 150 850 60 730 150 610 310 730 490 800 680 750 760 570 670 450 550 350 420 460 500 590 660 520 800 410 870 250 760 160 550 180 400 320 280 490 260 680 350 800 500 820 660 740 800 590 820 430 770 280 650 180 480 180 330 250 220 380 260 530 370 640 510 640 650 560 710 420 690 290 590 230 440 250 320 350 280 490 350 610 480 640 580 550 570 420 480 350 380 370 360 480 430 550 530 530 580 450 560 380 470 420 460 510 490 530 500 470 460 430 490 450 490 470 460 450 450 460'/%3E%3C/g%3E%3C/svg%3E");
+    /* Opacidad subida a 0.12 para que se vea mejor */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 800 800'%3E%3Cg fill='none' stroke='%23ffffff' stroke-width='1.5' opacity='0.12'%3E%3Cpath d='M769 229L1037 260.9M927 880L731 737 520 660 309 538 40 599 295 764 126 552 56 243 35 58 178 68 256 65 327 20 390 130 550 110 620 60 810 140 880 310 780 440 815 635 920 690 890 840 680 910 440 890 280 920 150 850 60 730 150 610 310 730 490 800 680 750 760 570 670 450 550 350 420 460 500 590 660 520 800 410 870 250 760 160 550 180 400 320 280 490 260 680 350 800 500 820 660 740 800 590 820 430 770 280 650 180 480 180 330 250 220 380 260 530 370 640 510 640 650 560 710 420 690 290 590 230 440 250 320 350 280 490 350 610 480 640 580 550 570 420 480 350 380 370 360 480 430 550 530 530 580 450 560 380 470 420 460 510 490 530 500 470 460 430 490 450 490 470 460 450 450 460'/%3E%3C/g%3E%3C/svg%3E");
     animation: drift 60s linear infinite alternate;
 }
-
-/* Capa 2: Grano estático encima */
 #background::after {
     content: ""; position: absolute; inset: 0;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
     opacity: 0.04; mix-blend-mode: overlay; pointer-events: none;
 }
-
 @keyframes drift {
     from { transform: translate(0, 0) rotate(0deg); }
     to { transform: translate(-50px, -30px) rotate(2deg); }
@@ -58,8 +54,8 @@ body {
 .card {
     position: absolute;
     width: 85%;
-    max-width: 600px;
-    height: 85vh; max-height: 900px;
+    max-width: 420px;
+    height: 78vh; max-height: 700px;
     background: var(--card-bg); border-radius: var(--radius-card);
     box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
     display: flex; flex-direction: column;
@@ -109,10 +105,6 @@ body {
 }
 .card-content > * { position: relative; z-index: 1; }
 .card-content::-webkit-scrollbar { display: none; }
-
-/* CORRECCIÓN MAPA PRINCIPAL */
-.card[data-card="map"] { overflow: hidden !important; -webkit-mask-image: -webkit-radial-gradient(white, black); }
-.card[data-card="map"] .card-content { padding: 0 !important; border-radius: 0 0 var(--radius-card) var(--radius-card) !important; }
 
 /* UI */
 .btn-primary, .btn-secondary {
@@ -181,9 +173,9 @@ input:focus, textarea:focus, select:focus {
 
 /* MAPAS, STATS & HOME MAP */
 .map-preview, .map-heat, .map-home {
-    width: 100%; border-radius: 24px;
+    width: 100%; border-radius: 24px !important; /* FORZADO para asegurar redondeo */
     background: #ECEFF1;
-    overflow: hidden;
+    overflow: hidden !important; /* FORZADO para que Leaflet no se salga */
 }
 .map-preview, .map-heat { height: 200px; margin-bottom: 1.5rem; }
 .map-home { height: 350px; margin-bottom: 1.5rem; box-shadow: 0 4px 20px -5px rgba(0,0,0,0.2); }
