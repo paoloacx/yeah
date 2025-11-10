@@ -28,6 +28,7 @@
             <rect width="100%" height="100%" fill="url(#glow)" />
             <rect width="100%" height="100%" filter="url(#grain)" />
         </svg>
+        <canvas id="topoCanvas"></canvas>
     </div>
 
     <div id="cardStack">
@@ -68,6 +69,14 @@
                 <div class="form-section" style="margin-top: 1rem;">
                     <label for="placeNote">Nota</label>
                     <textarea id="placeNote" rows="3" placeholder="Cuéntame más..."></textarea>
+                </div>
+
+                <div class="form-section">
+                    <label for="checkinDate">Fecha y Hora</label>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input type="date" id="checkinDate" style="flex: 1; margin-bottom: 0;">
+                        <input type="time" id="checkinTime" style="flex: 1; margin-bottom: 0;">
+                    </div>
                 </div>
 
                 <div class="form-section">
