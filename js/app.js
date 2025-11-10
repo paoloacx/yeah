@@ -217,8 +217,12 @@ document.getElementById('exportCSV').onclick = () => {
 };
 
 document.getElementById('exportJSON').onclick = () => {
-    const data = Storage.getAllCheckins();
-    if (!data.length) return showToast('No hay datos', 'normal');
+    const data = {
+        version: "1.0",
+        exportDate: new Date().toISOString(),
+        checkins: Storage.getAllCheckins()
+    };
+    if (!data.checkins.length) return showToast('No hay datos', 'normal');
     downloadFile(JSON.stringify(data, null, 2), `yeah_backup_${new Date().toISOString().slice(0,10)}.json`, 'application/json');
     showToast('Copia JSON descargada');
 };
@@ -246,15 +250,20 @@ document.getElementById('importFile').onchange = (e) => {
     reader.onload = (ev) => {
         try {
             const data = JSON.parse(ev.target.result.trim());
-            if (Array.isArray(data)) {
-                if (confirm(`¿Importar ${data.length} Yeahs? Se fusionarán con los actuales.`)) {
-                    data.forEach(c => Storage.saveCheckin(c));
+            // Soporte para ambos formatos: array directo o objeto con propiedad checkins
+            const checkinsToImport = Array.isArray(data) ? data : (data.checkins || []);
+            
+            if (Array.isArray(checkinsToImport) && checkinsToImport.length > 0) {
+                if (confirm(`¿Importar ${checkinsToImport.length} Yeahs? Se fusionarán con los actuales.`)) {
+                    checkinsToImport.forEach(c => Storage.saveCheckin(c));
                     showToast('¡Datos importados correctamente!', 'success');
                     setTimeout(() => location.reload(), 1500);
                 }
-            } else showToast('Formato JSON inválido', 'error');
-        } catch (err) { showToast('Error al leer el archivo', 'error'); }
-        e.target.value = ''; // Permitir importar el mismo archivo de nuevo
+            } else {
+                showToast('No se encontraron datos válidos en el archivo', 'error');
+            }
+        } catch (err) { showToast('Error al leer el archivo JSON', 'error'); console.error(err); }
+        e.target.value = '';
     };
     reader.readAsText(file);
 };
