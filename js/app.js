@@ -100,66 +100,48 @@ function initTopoBackground() {
     const resize = () => {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
+        drawTopo();
     };
     resize();
     window.addEventListener('resize', resize);
     
-    // Simple noise function
-    function noise(x, y, time) {
-        return Math.sin(x * 0.02 + time * 0.0005) * Math.cos(y * 0.015) * 50 +
-               Math.sin(x * 0.015 + y * 0.02) * 30 +
-               Math.cos(x * 0.01 - y * 0.01 + time * 0.0003) * 40;
-    }
-    
-    let time = 0;
-    
-    function animate() {
+    function drawTopo() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
-        ctx.lineWidth = 1.2;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.lineWidth = 1;
         
-        // Draw contour lines every 15 units
-        for (let level = -100; level <= 100; level += 15) {
-            const paths = [];
-            
-            // Sample points and find contours
-            for (let y = 0; y < canvas.height; y += 5) {
-                for (let x = 0; x < canvas.width; x += 5) {
-                    const h1 = noise(x, y, time);
-                    const h2 = noise(x + 5, y, time);
-                    const h3 = noise(x, y + 5, time);
-                    
-                    // Check if contour crosses horizontally
-                    if ((h1 < level && h2 >= level) || (h1 >= level && h2 < level)) {
-                        const t = (level - h1) / (h2 - h1);
-                        paths.push({x: x + t * 5, y: y});
-                    }
-                    
-                    // Check if contour crosses vertically
-                    if ((h1 < level && h3 >= level) || (h1 >= level && h3 < level)) {
-                        const t = (level - h1) / (h3 - h1);
-                        paths.push({x: x, y: y + t * 5});
-                    }
-                }
+        const spacing = 80;
+        const amplitude = 40;
+        
+        // Draw organic wavy lines across the canvas
+        for (let y = -amplitude; y < canvas.height + amplitude; y += spacing) {
+            ctx.beginPath();
+            for (let x = 0; x <= canvas.width; x += 10) {
+                const wave1 = Math.sin(x * 0.01 + y * 0.02) * amplitude;
+                const wave2 = Math.sin(x * 0.015 + y * 0.01) * (amplitude * 0.5);
+                const yPos = y + wave1 + wave2;
+                
+                if (x === 0) ctx.moveTo(x, yPos);
+                else ctx.lineTo(x, yPos);
             }
-            
-            // Draw smooth curves through points
-            if (paths.length > 2) {
-                ctx.beginPath();
-                ctx.moveTo(paths[0].x, paths[0].y);
-                for (let i = 1; i < paths.length - 1; i++) {
-                    const xc = (paths[i].x + paths[i + 1].x) / 2;
-                    const yc = (paths[i].y + paths[i + 1].y) / 2;
-                    ctx.quadraticCurveTo(paths[i].x, paths[i].y, xc, yc);
-                }
-                ctx.stroke();
-            }
+            ctx.stroke();
         }
         
-        time++;
-        requestAnimationFrame(animate);
+        // Draw secondary lines with different offset
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+        for (let y = spacing/2; y < canvas.height + amplitude; y += spacing) {
+            ctx.beginPath();
+            for (let x = 0; x <= canvas.width; x += 10) {
+                const wave1 = Math.sin(x * 0.012 + y * 0.018) * amplitude;
+                const wave2 = Math.cos(x * 0.008 + y * 0.022) * (amplitude * 0.6);
+                const yPos = y + wave1 + wave2;
+                
+                if (x === 0) ctx.moveTo(x, yPos);
+                else ctx.lineTo(x, yPos);
+            }
+            ctx.stroke();
+        }
     }
-    animate();
 }
 
 // --- Maps & Location ---

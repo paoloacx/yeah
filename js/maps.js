@@ -3,8 +3,9 @@ const Maps = {
     createMap(elementId, lat, lng, zoom = 13) {
         const map = L.map(elementId).setView([lat, lng], zoom);
         
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors',
+        // CartoDB Positron - estilo limpio y claro
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '© OpenStreetMap contributors © CARTO',
             maxZoom: 19
         }).addTo(map);
 
