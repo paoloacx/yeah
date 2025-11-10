@@ -140,6 +140,43 @@ function updateLoc(lat, lng) {
     marker = Maps.addMarker(checkinMap, lat, lng);
 }
 
+// --- Search ---
+document.getElementById('searchBtn').onclick = () => {
+    const query = document.getElementById('placeSearch').value.trim();
+    if (!query || !currentPos) return;
+    showToast('Buscando lugares...');
+    // Simulamos búsqueda ya que la función real estaba en maps.js y se movió
+    // Para una implementación real necesitaríamos llamar a la API de Nominatim u otra
+    // Aquí restauramos una versión simple que usa la función que probablemente estaba en maps.js
+    if (window.Maps && window.Maps.searchNearby) {
+        window.Maps.searchNearby(currentPos.lat, currentPos.lng, query)
+            .then(results => {
+                 const container = document.getElementById('placeResults');
+                 container.innerHTML = results.map(r => 
+                     `<div class="place-item" onclick="selectPlace('${r.display_name.replace(/'/g, "\\'")}', ${r.lat}, ${r.lon})">${r.display_name}</div>`
+                 ).join('');
+            })
+            .catch(() => showToast('Error en la búsqueda', 'error'));
+    } else {
+        // Fallback si maps.js no tiene la función expuesta
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&lat=${currentPos.lat}&lon=${currentPos.lng}`)
+            .then(r => r.json())
+            .then(results => {
+                const container = document.getElementById('placeResults');
+                 container.innerHTML = results.map(r => 
+                     `<div class="place-item" onclick="selectPlace('${r.display_name.replace(/'/g, "\\'")}', ${r.lat}, ${r.lon})">${r.display_name}</div>`
+                 ).join('');
+            })
+            .catch(() => showToast('Error al buscar', 'error'));
+    }
+};
+
+window.selectPlace = (name, lat, lng) => {
+    document.getElementById('placeNote').value = (document.getElementById('placeNote').value + ' ' + name).trim();
+    document.getElementById('placeResults').innerHTML = '';
+    updateLoc(parseFloat(lat), parseFloat(lng));
+};
+
 // --- Photo Handling ---
 document.getElementById('photoInput').addEventListener('change', function(e) {
     const file = e.target.files[0];
@@ -234,7 +271,7 @@ document.getElementById('exportICal').onclick = () => {
     data.forEach(c => {
         const d = new Date(c.timestamp).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
         ics += "BEGIN:VEVENT\n" +
-               `UID:${c.id}@yeah.app\nDTSTAMP:${d}\nDTSTART:${d}\nSUMMARY:Yeah¡ aquí\n` +
+               `UID:${c.id}@yeah.app\nDTSTAMP:${d}\nDTSTART:${d}\nSUMMARY:Yeah¡ aquí\n" +
                `DESCRIPTION:${c.note || ''}\nGEO:${c.location.lat};${c.location.lng}\nEND:VEVENT\n`;
     });
     ics += "END:VCALENDAR";
@@ -250,9 +287,7 @@ document.getElementById('importFile').onchange = (e) => {
     reader.onload = (ev) => {
         try {
             const data = JSON.parse(ev.target.result.trim());
-            // Soporte para ambos formatos: array directo o objeto con propiedad checkins
             const checkinsToImport = Array.isArray(data) ? data : (data.checkins || []);
-            
             if (Array.isArray(checkinsToImport) && checkinsToImport.length > 0) {
                 if (confirm(`¿Importar ${checkinsToImport.length} Yeahs? Se fusionarán con los actuales.`)) {
                     checkinsToImport.forEach(c => Storage.saveCheckin(c));
@@ -260,9 +295,9 @@ document.getElementById('importFile').onchange = (e) => {
                     setTimeout(() => location.reload(), 1500);
                 }
             } else {
-                showToast('No se encontraron datos válidos en el archivo', 'error');
+                showToast('No se encontraron datos válidos', 'error');
             }
-        } catch (err) { showToast('Error al leer el archivo JSON', 'error'); console.error(err); }
+        } catch (err) { showToast('Error al leer el archivo JSON', 'error'); }
         e.target.value = '';
     };
     reader.readAsText(file);
