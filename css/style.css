@@ -16,11 +16,11 @@
 }
 
 body {
-    /* Actualizada fuente principal a Source Sans Pro */
     font-family: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background-color: var(--bg-color);
     color: var(--text-primary);
-    height: 100dvh; overflow: hidden; touch-action: pan-y;
+    height: 100%; /* Ajuste para eliminar bandas negras */
+    overflow: hidden; touch-action: pan-y;
 }
 
 #background {
@@ -37,18 +37,27 @@ body {
 }
 
 .card {
-    position: absolute; width: 90%; max-width: 420px;
+    position: absolute;
+    width: 85%; /* Ajuste de ancho */
+    max-width: 420px;
     height: 78vh; max-height: 700px;
     background: var(--card-bg); border-radius: var(--radius-card);
     box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
     display: flex; flex-direction: column;
     will-change: transform, opacity;
     transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.6s;
+
+    /* Grano fino en las tarjetas */
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    background-size: 100px; /* Ajusta el tamaño del grano */
+    background-blend-mode: overlay; /* Combina el grano con el fondo */
+    opacity: 0.98; /* Un poco de transparencia para el grano */
 }
 
-.card[data-position="0"] { z-index: 10; transform: translateX(0) scale(1); opacity: 1; }
-.card[data-position="1"] { z-index: 9; transform: translateY(25px) scale(0.94); opacity: 0.6; pointer-events: none; filter: brightness(0.95); }
-.card[data-position="2"] { z-index: 8; transform: translateY(50px) scale(0.88); opacity: 0.3; pointer-events: none; filter: brightness(0.9); }
+/* Ajuste de posiciones para que se vean "desordenadas" */
+.card[data-position="0"] { z-index: 10; transform: translateX(0) translateY(0px) scale(1) rotate(0deg); opacity: 1; }
+.card[data-position="1"] { z-index: 9; transform: translateX(10px) translateY(25px) scale(0.94) rotate(1.5deg); opacity: 0.6; pointer-events: none; filter: brightness(0.95); }
+.card[data-position="2"] { z-index: 8; transform: translateX(-10px) translateY(50px) scale(0.88) rotate(-1.5deg); opacity: 0.3; pointer-events: none; filter: brightness(0.9); }
 .card[data-position^="-"], .card[data-position="3"], .card[data-position="4"] { opacity: 0; pointer-events: none; }
 .card.dragging { transition: none !important; }
 
@@ -59,6 +68,11 @@ body {
     border-bottom: 1px solid rgba(0,0,0,0.06);
     border-radius: var(--radius-card) var(--radius-card) 0 0;
     z-index: 2; position: relative; overflow: hidden;
+    /* Grano fino en las cabeceras */
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    background-size: 100px;
+    background-blend-mode: overlay;
+    opacity: 0.98;
 }
 .card-header::before {
     content: ""; position: absolute; inset: 0; opacity: 0.12; pointer-events: none;
@@ -78,10 +92,10 @@ body {
 }
 .card-content::-webkit-scrollbar { display: none; }
 
-/* MAPA PRINCIPAL CON ESQUINAS REDONDEADAS (20px) */
+/* MAPA PRINCIPAL CON ESQUINAS REDONDEADAS */
 .map-full {
     width: 100%; height: 100%;
-    border-radius: 0 0 20px 20px !important;
+    border-radius: 0 0 var(--radius-card) var(--radius-card) !important; /* Ahora sí con var(--radius-card) */
 }
 
 /* UI */
