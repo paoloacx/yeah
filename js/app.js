@@ -145,9 +145,6 @@ document.getElementById('searchBtn').onclick = () => {
     const query = document.getElementById('placeSearch').value.trim();
     if (!query || !currentPos) return;
     showToast('Buscando lugares...');
-    // Simulamos búsqueda ya que la función real estaba en maps.js y se movió
-    // Para una implementación real necesitaríamos llamar a la API de Nominatim u otra
-    // Aquí restauramos una versión simple que usa la función que probablemente estaba en maps.js
     if (window.Maps && window.Maps.searchNearby) {
         window.Maps.searchNearby(currentPos.lat, currentPos.lng, query)
             .then(results => {
@@ -158,7 +155,6 @@ document.getElementById('searchBtn').onclick = () => {
             })
             .catch(() => showToast('Error en la búsqueda', 'error'));
     } else {
-        // Fallback si maps.js no tiene la función expuesta
         fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&lat=${currentPos.lat}&lon=${currentPos.lng}`)
             .then(r => r.json())
             .then(results => {
@@ -271,7 +267,7 @@ document.getElementById('exportICal').onclick = () => {
     data.forEach(c => {
         const d = new Date(c.timestamp).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
         ics += "BEGIN:VEVENT\n" +
-               `UID:${c.id}@yeah.app\nDTSTAMP:${d}\nDTSTART:${d}\nSUMMARY:Yeah¡ aquí\n" +
+               `UID:${c.id}@yeah.app\nDTSTAMP:${d}\nDTSTART:${d}\nSUMMARY:Yeah¡ aquí\n` +
                `DESCRIPTION:${c.note || ''}\nGEO:${c.location.lat};${c.location.lng}\nEND:VEVENT\n`;
     });
     ics += "END:VCALENDAR";
