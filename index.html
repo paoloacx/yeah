@@ -21,7 +21,7 @@
                 <filter id="grain">
                     <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" stitchTiles="stitch"/>
                     <feColorMatrix type="saturate" values="0"/>
-                    <feComponentTransfer><feFuncA type="linear" slope="0.8"/></feComponentTransfer>
+                    <feComponentTransfer><feFuncA type="linear" slope="0.07"/></feComponentTransfer>
                 </filter>
             </defs>
             <rect width="100%" height="100%" fill="url(#glow)" />
@@ -38,7 +38,7 @@
                     <span class="dot active"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
                 </div>
             </div>
-            <div class="card-content map-container">
+            <div class="card-content" style="padding:0; overflow:hidden;">
                 <div id="map" class="map-full"></div>
             </div>
         </div>
@@ -67,14 +67,14 @@
                 
                 <div class="form-section">
                     <label>Ubicación GPS</label>
-                    <div id="currentLocation" style="font-family:monospace; opacity:0.7; margin-bottom:1rem; padding-left:0.5rem;">...</div>
+                    <div id="currentLocation" style="font-family:monospace; opacity:0.7; margin-bottom:1rem">...</div>
                 </div>
 
                 <div class="form-section">
                     <label for="placeSearch">¿Dónde estás? (Opcional)</label>
                     <div style="display: flex; gap:0.5rem">
                         <input type="text" id="placeSearch" placeholder="Buscar lugar cercano..." style="margin-bottom:0">
-                        <button id="searchBtn" class="btn-icon" style="background:var(--primary-color); color:white; flex-shrink:0; box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);">🔍</button>
+                        <button id="searchBtn" class="btn-icon" style="background:var(--primary-color); color:white; flex-shrink:0">🔍</button>
                     </div>
                     <div id="placeResults" class="place-results"></div>
                 </div>
@@ -85,7 +85,7 @@
                 </div>
 
                 <button id="saveCheckin" class="btn-primary">Guardar Yeah¡</button>
-                <button id="cancelEdit" class="btn-text" style="display:none; width:100%; padding:1rem; margin-top:0.5rem; background:none; border:none; color:var(--danger-color); font-weight:600; cursor:pointer;">Cancelar edición</button>
+                <button id="cancelEdit" class="btn-text" style="display:none; width:100%; padding:1rem; margin-top:0.5rem; background:none; border:none; color:var(--danger-color); font-weight:600;">Cancelar edición</button>
             </div>
         </div>
 
@@ -98,15 +98,16 @@
             </div>
             <div class="card-content">
                 <div class="filter-section">
-                    <input type="text" id="searchFilter" placeholder="Buscar...">
+                    <input type="text" id="searchFilter" placeholder="Buscar en tu historial...">
                     <select id="sortFilter">
-                        <option value="newest">Recientes</option>
-                        <option value="oldest">Antiguos</option>
+                        <option value="newest">Más recientes</option>
+                        <option value="oldest">Más antiguos</option>
                     </select>
                 </div>
+
                 <div id="checkinsList" class="checkins-list"></div>
                 <div id="emptyState" class="empty-state" style="display: none;">
-                    <p>No hay resultados</p>
+                    <p>No hay Yeahs que coincidan</p>
                 </div>
             </div>
         </div>
@@ -168,16 +169,17 @@
                     <h2>Exportar Datos</h2>
                     <p style="color:var(--text-secondary); margin-bottom:1rem; font-size:0.9rem;">Guarda tus recuerdos fuera de la app.</p>
                     <div style="display:grid; gap:0.8rem;">
-                        <button id="exportCSV" class="btn-secondary">📄 Descargar CSV</button>
-                        <button id="exportICal" class="btn-secondary">📅 Descargar iCal</button>
-                        <button id="exportJSON" class="btn-secondary">📦 Copia JSON</button>
+                        <button id="exportCSV" class="btn-secondary">📄 Descargar CSV (Excel)</button>
+                        <button id="exportICal" class="btn-secondary">📅 Descargar iCal (Calendario)</button>
+                        <button id="exportJSON" class="btn-secondary">📦 Copia de Seguridad (JSON)</button>
                     </div>
                 </div>
+
                 <div class="stats-section" style="margin-top:1.5rem">
                     <h2>Importar</h2>
-                    <p style="color:var(--text-secondary); margin-bottom:1rem; font-size:0.9rem;">Restaura una copia de seguridad.</p>
+                    <p style="color:var(--text-secondary); margin-bottom:1rem; font-size:0.9rem;">Restaura una copia de seguridad JSON.</p>
                     <input type="file" id="importFile" accept=".json" style="display: none;">
-                    <button id="importJSON" class="btn-primary" style="background: var(--text-primary); box-shadow:none;">📥 Importar JSON</button>
+                    <button id="importJSON" class="btn-primary">📥 Importar Copia de Seguridad</button>
                 </div>
             </div>
         </div>
