@@ -104,42 +104,73 @@ function initTopoBackground() {
     resize();
     window.addEventListener('resize', resize);
     
-    const lines = [];
-    const numLines = 15;
-    for (let i = 0; i < numLines; i++) {
-        lines.push({
-            points: [],
-            baseY: (canvas.height / numLines) * i,
-            phase: Math.random() * Math.PI * 2,
-            speed: 0.0005 + Math.random() * 0.001,
-            amplitude: 30 + Math.random() * 50
-        });
-    }
+    // Create a height map with multiple noise layers
+    const heightMap = [];
+    const cols = 150;
+    const rows = 150;
     
-    const numPoints = 50;
-    for (let line of lines) {
-        for (let i = 0; i <= numPoints; i++) {
-            line.points.push({
-                x: (canvas.width / numPoints) * i,
-                offset: Math.random() * Math.PI * 2
-            });
+    for (let y = 0; y < rows; y++) {
+        heightMap[y] = [];
+        for (let x = 0; x < cols; x++) {
+            let height = 0;
+            // Multiple octaves of Perlin-like noise
+            height += Math.sin(x * 0.05 + y * 0.03) * 20;
+            height += Math.sin(x * 0.1 + y * 0.08) * 10;
+            height += Math.sin(x * 0.2 + y * 0.15) * 5;
+            height += Math.cos(x * 0.03 + y * 0.05) * 15;
+            heightMap[y][x] = height;
         }
     }
     
     let time = 0;
+    
     function animate() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.lineWidth = 1;
         
-        for (let line of lines) {
+        const scaleX = canvas.width / cols;
+        const scaleY = canvas.height / rows;
+        
+        // Draw contour lines at different elevation levels
+        for (let elevation = -50; elevation < 50; elevation += 3) {
             ctx.beginPath();
-            for (let i = 0; i < line.points.length; i++) {
-                const point = line.points[i];
-                const y = line.baseY + Math.sin(time * line.speed + point.offset + line.phase) * line.amplitude;
-                
-                if (i === 0) ctx.moveTo(point.x, y);
-                else ctx.lineTo(point.x, y);
+            
+            for (let y = 0; y < rows - 1; y++) {
+                for (let x = 0; x < cols - 1; x++) {
+                    const h1 = heightMap[y][x] + Math.sin(time * 0.001 + x * 0.1) * 2;
+                    const h2 = heightMap[y][x + 1] + Math.sin(time * 0.001 + (x + 1) * 0.1) * 2;
+                    const h3 = heightMap[y + 1][x] + Math.sin(time * 0.001 + x * 0.1) * 2;
+                    const h4 = heightMap[y + 1][x + 1] + Math.sin(time * 0.001 + (x + 1) * 0.1) * 2;
+                    
+                    // Check if contour line passes through this cell
+                    const corners = [h1, h2, h3, h4];
+                    const minH = Math.min(...corners);
+                    const maxH = Math.max(...corners);
+                    
+                    if (elevation >= minH && elevation <= maxH) {
+                        // Draw contour segment
+                        const px = x * scaleX;
+                        const py = y * scaleY;
+                        
+                        if (h1 <= elevation && h2 > elevation) {
+                            const t = (elevation - h1) / (h2 - h1);
+                            ctx.lineTo(px + t * scaleX, py);
+                        }
+                        if (h2 <= elevation && h4 > elevation) {
+                            const t = (elevation - h2) / (h4 - h2);
+                            ctx.lineTo(px + scaleX, py + t * scaleY);
+                        }
+                        if (h3 <= elevation && h4 > elevation) {
+                            const t = (elevation - h3) / (h4 - h3);
+                            ctx.lineTo(px + t * scaleX, py + scaleY);
+                        }
+                        if (h1 <= elevation && h3 > elevation) {
+                            const t = (elevation - h1) / (h3 - h1);
+                            ctx.lineTo(px, py + t * scaleY);
+                        }
+                    }
+                }
             }
             ctx.stroke();
         }
@@ -179,6 +210,8 @@ function resetCheckin() {
     document.getElementById('photoPreview').src = '#';
     document.getElementById('placeSearch').value = '';
     document.getElementById('placeResults').innerHTML = '';
+    
+    document.getElementById('dateTimeSection').style.display = 'none';
     
     const now = new Date();
     document.getElementById('checkinDate').value = now.toISOString().split('T')[0];
@@ -300,6 +333,8 @@ window.editCheckin = (id) => {
     document.getElementById('cardTitleCheckin').textContent = 'Editando Yeah¡';
     document.getElementById('saveCheckin').textContent = 'Actualizar Yeah¡';
     document.getElementById('placeNote').value = c.note || '';
+    
+    document.getElementById('dateTimeSection').style.display = 'block';
     
     const checkinDate = new Date(c.timestamp);
     document.getElementById('checkinDate').value = checkinDate.toISOString().split('T')[0];
