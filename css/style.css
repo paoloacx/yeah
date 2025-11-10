@@ -62,36 +62,53 @@ body {
     border-bottom: 1px solid rgba(0,0,0,0.06);
     border-radius: var(--radius-card) var(--radius-card) 0 0;
     z-index: 2; position: relative; overflow: hidden;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-    background-size: 150px;
-    background-blend-mode: overlay;
-    opacity: 0.98;
 }
-.card-header h1 { font-size: 1.4rem; font-weight: 800; color: #4caf50; letter-spacing: -0.5px; z-index: 1; }
+.card-header::before {
+    content: ""; position: absolute; inset: 0; opacity: 0.15; pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+.card-header h1 { font-size: 1.4rem; font-weight: 800; color: #37474F; letter-spacing: -0.5px; z-index: 1; }
 .card-indicator { display: flex; gap: 6px; z-index: 1; }
 .dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(0,0,0,0.2); transition: all 0.4s ease; }
 .dot.active { background: var(--primary-color); transform: scale(1.4); }
 
-/* CONTENIDO con ruido */
+/* CONTENIDO con ruido forzado */
 .card-content {
     flex: 1; padding: 1.5rem; overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     background-color: #F5F7F8;
-    /* Añadido ruido al fondo del contenido */
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-    background-size: 150px;
-    background-blend-mode: soft-light;
-    
     scrollbar-width: none;
     border-radius: 0 0 var(--radius-card) var(--radius-card);
-    /* Importante para que el mapa no se salga de las esquinas redondeadas */
-    overflow: hidden; 
+    position: relative; /* Necesario para el pseudo-elemento de ruido */
 }
+/* Capa de ruido separada para garantizar visibilidad */
+.card-content::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    opacity: 0.15; /* Ajusta este valor si quieres más o menos ruido */
+    pointer-events: none;
+    mix-blend-mode: multiply;
+    z-index: 0;
+}
+/* Asegura que el contenido interactuable esté por encima del ruido */
+.card-content > * {
+    position: relative;
+    z-index: 1;
+}
+
 .card-content::-webkit-scrollbar { display: none; }
 
-/* MAPA PRINCIPAL: Forzamos el redondeo en el contenedor de Leaflet también */
-.map-full.leaflet-container {
+/* MAPA PRINCIPAL: Redondeo forzado */
+/* Aplicamos el redondeo al contenedor específico de la tarjeta de mapa para que recorte el mapa */
+.card[data-card="map"] .card-content {
+    border-radius: 0 0 var(--radius-card) var(--radius-card) !important;
+    overflow: hidden !important;
+}
+.map-full {
     width: 100%; height: 100%;
+    /* Forzamos también aquí por seguridad */
     border-radius: 0 0 var(--radius-card) var(--radius-card) !important;
 }
 
@@ -164,7 +181,7 @@ input:focus, textarea:focus, select:focus {
 .map-preview, .map-heat {
     width: 100%; height: 200px; border-radius: 20px;
     background: #ECEFF1; margin-bottom: 1.5rem;
-    overflow: hidden; /* Asegura redondeo en mapas pequeños también */
+    overflow: hidden;
 }
 .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem; }
 .stat-card {
@@ -205,7 +222,7 @@ input:focus, textarea:focus, select:focus {
     background: var(--card-bg);
     margin: auto;
     opacity: 0; transform: scale(0.9); transition: all 0.3s ease;
-    overflow: hidden; /* Para redondear todo el modal */
+    overflow: hidden;
 }
 .modal[open] { opacity: 1; transform: scale(1); }
 .modal::backdrop { background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); }
@@ -217,11 +234,3 @@ input:focus, textarea:focus, select:focus {
 .modal-header h2 { font-size: 1.2rem; color: #37474F; }
 .modal .modal-content { padding: 1.5rem; background: white; }
 .modal-actions { display: flex; gap: 1rem; margin-top: 1.5rem; }
-
-.btn-icon {
-    width: 42px; height: 42px; border-radius: 50%; border: none;
-    background: #f5f5f5; font-size: 1.2rem; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    transition: all 0.2s;
-}
-.btn-icon:active { transform: scale(0.9); }
