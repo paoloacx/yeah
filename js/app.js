@@ -204,7 +204,7 @@ window.editCheckin = (id) => {
     }, 300);
 };
 
-// --- Settings & Data Management (NUEVO: Integrado aquí para asegurar funcionamiento) ---
+// --- Settings & Data Management ---
 document.getElementById('exportCSV').onclick = () => {
     const data = Storage.getAllCheckins();
     if (!data.length) return showToast('No hay datos', 'normal');
@@ -245,7 +245,7 @@ document.getElementById('importFile').onchange = (e) => {
     const reader = new FileReader();
     reader.onload = (ev) => {
         try {
-            const data = JSON.parse(ev.target.result);
+            const data = JSON.parse(ev.target.result.trim());
             if (Array.isArray(data)) {
                 if (confirm(`¿Importar ${data.length} Yeahs? Se fusionarán con los actuales.`)) {
                     data.forEach(c => Storage.saveCheckin(c));
@@ -254,6 +254,7 @@ document.getElementById('importFile').onchange = (e) => {
                 }
             } else showToast('Formato JSON inválido', 'error');
         } catch (err) { showToast('Error al leer el archivo', 'error'); }
+        e.target.value = ''; // Permitir importar el mismo archivo de nuevo
     };
     reader.readAsText(file);
 };
