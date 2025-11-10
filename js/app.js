@@ -48,7 +48,6 @@ const CardStack = {
         this.currentX = e.clientX;
         if (Math.abs(this.currentX - this.startX) > 5) this.hasMoved = true;
         const diff = this.currentX - this.startX;
-        // Añadimos rotación base si existe en CSS para mantener el estilo "desordenado" durante el arrastre
         const baseRotation = this.currentIndex === 1 ? 1.5 : (this.currentIndex === 2 ? -1.5 : 0);
         this.cards[this.currentIndex].style.transform = `translateX(${diff * 0.7}px) rotate(${baseRotation + diff * 0.03}deg)`;
     },
@@ -73,7 +72,10 @@ const CardStack = {
     },
     loadCardContent(i) {
         const type = this.cards[i].dataset.card;
-        if (type === 'map') window.mainMap ? setTimeout(() => window.mainMap.invalidateSize(), 200) : initMainMap();
+        if (type === 'map') {
+            window.mainMap ? setTimeout(() => window.mainMap.invalidateSize(), 200) : initMainMap();
+            updateQuickStats();
+        }
         if (type === 'checkin' && !window.editingId) resetCheckin();
         if (type === 'history') loadHistory();
         if (type === 'stats') loadStats();
@@ -82,7 +84,7 @@ const CardStack = {
 
 // --- App Globals & Init ---
 let mainMap, checkinMap, detailsMap, heatMapInstance, currentPos, editingId = null, watchId = null, marker = null;
-let currentPhoto = null; // Variable para guardar la foto actual en base64
+let currentPhoto = null;
 
 document.addEventListener('DOMContentLoaded', () => CardStack.init());
 
@@ -98,6 +100,13 @@ function createMain(lat, lng) {
     mainMap = Maps.createMap('map', lat, lng, 13);
     Maps.addCheckinsToMap(mainMap, Storage.getAllCheckins());
 }
+function updateQuickStats() {
+    const checkins = Storage.getAllCheckins();
+    const places = new Set(checkins.map(c => `${c.location.lat.toFixed(3)},${c.location.lng.toFixed(3)}`)).size;
+    document.getElementById('quickStats').innerHTML = 
+        `Llevas <strong>${checkins.length}</strong> Yeahs¡ en <strong>${places}</strong> lugares distintos.`;
+}
+
 function resetCheckin() {
     editingId = null;
     currentPhoto = null;
@@ -107,23 +116,25 @@ function resetCheckin() {
     document.getElementById('photoInput').value = '';
     document.getElementById('photoPreview').style.display = 'none';
     document.getElementById('photoPreview').src = '#';
+    document.getElementById('placeSearch').value = '';
+    document.getElementById('placeResults').innerHTML = '';
     
     if (watchId) navigator.geolocation.clearWatch(watchId);
     watchId = navigator.geolocation.watchPosition(
-        p => updateLoc(p.coords.latitude, p.coords.longitude, 'Ubicación GPS activa'),
+        p => updateLoc(p.coords.latitude, p.coords.longitude),
         e => showToast('Buscando señal GPS...', 'error'), {enableHighAccuracy:true}
     );
 }
-function updateLoc(lat, lng, msg) {
+function updateLoc(lat, lng) {
     currentPos = {lat, lng};
-    document.getElementById('locationStatus').textContent = msg;
-    document.getElementById('currentLocation').textContent = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+    // Ya no actualizamos textos de estado porque los hemos borrado del HTML
     if (!checkinMap) {
         checkinMap = Maps.createMap('mapPreview', lat, lng, 16);
         checkinMap.on('click', e => {
             if (watchId) navigator.geolocation.clearWatch(watchId);
             watchId = null;
-            updateLoc(e.latlng.lat, e.latlng.lng, '📍 Ubicación manual fijada');
+            updateLoc(e.latlng.lat, e.latlng.lng);
+            showToast('Ubicación fijada manualmente');
         });
     }
     checkinMap.setView([lat, lng], 16);
@@ -143,24 +154,14 @@ document.getElementById('photoInput').addEventListener('change', function(e) {
             const canvas = document.createElement('canvas');
             let width = img.width;
             let height = img.height;
-            
-            // Redimensionar a máx 800px
             if (width > 800 || height > 800) {
-                if (width > height) {
-                    height *= 800 / width;
-                    width = 800;
-                } else {
-                    width *= 800 / height;
-                    height = 800;
-                }
+                if (width > height) { height *= 800 / width; width = 800; }
+                else { width *= 800 / height; height = 800; }
             }
-            
-            canvas.width = width;
-            canvas.height = height;
+            canvas.width = width; canvas.height = height;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, width, height);
-            
-            currentPhoto = canvas.toDataURL('image/jpeg', 0.7); // Compresión JPEG al 70%
+            currentPhoto = canvas.toDataURL('image/jpeg', 0.7);
             document.getElementById('photoPreview').src = currentPhoto;
             document.getElementById('photoPreview').style.display = 'block';
         };
@@ -207,7 +208,7 @@ window.editCheckin = (id) => {
     setTimeout(() => {
         if (!checkinMap) checkinMap = Maps.createMap('mapPreview', 0, 0, 16);
         if (watchId) navigator.geolocation.clearWatch(watchId); watchId = null;
-        updateLoc(c.location.lat, c.location.lng, 'Editando ubicación original');
+        updateLoc(c.location.lat, c.location.lng);
     }, 300);
 };
 
@@ -235,7 +236,6 @@ window.showDetails = (id) => {
     const c = Storage.getCheckin(id); if(!c) return;
     const dF = new Intl.DateTimeFormat('es-ES', {dateStyle:'full', timeStyle:'short'});
     
-    // Mostrar foto si existe
     const photoContainer = document.getElementById('detailsPhotoContainer');
     const photoImg = document.getElementById('detailsPhoto');
     if (c.photo) {
@@ -267,7 +267,6 @@ window.showDetails = (id) => {
     setTimeout(() => {
         if(!detailsMap) detailsMap = Maps.createMap('detailsMap', c.location.lat, c.location.lng, 15);
         else { detailsMap.invalidateSize(); detailsMap.setView([c.location.lat, c.location.lng], 15); }
-        
         detailsMap.eachLayer(layer => { if(layer instanceof L.Marker) detailsMap.removeLayer(layer); });
         Maps.addMarker(detailsMap, c.location.lat, c.location.lng);
     }, 100);
@@ -280,7 +279,7 @@ function loadStats() {
     const checkins = Storage.getAllCheckins();
     document.getElementById('statTotal').textContent = checkins.length;
     document.getElementById('statPlaces').textContent = new Set(checkins.map(c => `${c.location.lat.toFixed(3)},${c.location.lng.toFixed(3)}`)).size;
-    document.getElementById('statPhotos').textContent = checkins.filter(c => c.photo).length; // Corregido contador de fotos
+    document.getElementById('statPhotos').textContent = checkins.filter(c => c.photo).length;
     document.getElementById('statNotes').textContent = checkins.filter(c => c.note && c.note.trim()).length;
     
     const places = {}; checkins.forEach(c => { const k = `${c.location.lat.toFixed(3)}, ${c.location.lng.toFixed(3)}`; places[k] = (places[k]||0)+1; });
