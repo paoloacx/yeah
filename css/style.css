@@ -92,24 +92,22 @@ body {
 .card-content::-webkit-scrollbar { display: none; }
 
 /* =========================================
-   CORRECCIÓN DEFINITIVA MAPA PRINCIPAL (Opción 2)
+   CORRECCIÓN DEFINITIVA MAPA PRINCIPAL (NUCLEAR)
    ========================================= */
 .card[data-card="map"] {
-    background-color: #1a1a1a; /* Fondo oscuro para evitar líneas blancas */
-}
-.card[data-card="map"] .card-content {
-    border-bottom-left-radius: var(--radius-card) !important;
-    border-bottom-right-radius: var(--radius-card) !important;
+    /* Asegura que la propia tarjeta recorte todo */
     overflow: hidden !important;
-    /* Máscara para forzar recorte en motores webkit rebeldes */
-    transform: translateZ(0);
+    /* Parche para safari mobile que a veces ignora overflow */
     -webkit-mask-image: -webkit-radial-gradient(white, black);
 }
-#map, .map-full, .leaflet-container {
+.card[data-card="map"] .card-content {
+    padding: 0 !important; /* Reemplaza el style inline eliminado */
+    border-radius: 0 0 var(--radius-card) var(--radius-card) !important;
+}
+#map.map-full {
     width: 100%; height: 100%;
-    border-bottom-left-radius: var(--radius-card) !important;
-    border-bottom-right-radius: var(--radius-card) !important;
-    overflow: hidden !important;
+    /* El mapa en sí no necesita borde si el contenedor lo recorta bien */
+    border-radius: 0 !important; 
 }
 
 /* UI */
