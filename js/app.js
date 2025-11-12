@@ -156,6 +156,51 @@ document.addEventListener('DOMContentLoaded', () => {
         hasUnsavedChanges = true;
     });
 
+    // Top place search
+    document.getElementById('topPlaceSearchBtn').addEventListener('click', () => {
+        const query = document.getElementById('topPlaceSearch').value.trim();
+        if (!query) return;
+
+        showToast('Buscando lugares...');
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
+            .then(r => r.json())
+            .then(results => {
+                const container = document.getElementById('topPlaceSearchResults');
+                container.innerHTML = results.slice(0, 5).map(r =>
+                    `<div class="place-item" onclick="selectSearchedPlaceForTop('${r.display_name.replace(/'/g, "\\'")}', ${r.lat}, ${r.lon})">${r.display_name}</div>`
+                ).join('');
+            })
+            .catch(() => showToast('Error al buscar', 'error'));
+    });
+
+    // Save single top place
+    document.getElementById('saveSingleTopPlace').addEventListener('click', () => {
+        const name = document.getElementById('topPlaceName').value.trim();
+        const icon = document.getElementById('topPlaceIcon').value.trim() || '📍';
+
+        if (!name) {
+            showToast('Falta el nombre', 'error');
+            return;
+        }
+
+        if (!selectedTopPlaceLocation) {
+            showToast('Falta la ubicación', 'error');
+            return;
+        }
+
+        Storage.updateTopPlace(editingTopPlaceIndex, {
+            name: name,
+            lat: selectedTopPlaceLocation.lat,
+            lng: selectedTopPlaceLocation.lng,
+            icon: icon
+        });
+
+        showToast('Lugar TOP actualizado');
+        closeEditSingleTopPlace();
+        showEditTopPlacesModal(); // Refresh list
+        if ('vibrate' in navigator) navigator.vibrate(50);
+    });
+
     // Track unsaved changes
     document.getElementById('placeNote').addEventListener('input', () => hasUnsavedChanges = true);
     document.getElementById('photoInput').addEventListener('change', () => hasUnsavedChanges = true);
@@ -730,24 +775,28 @@ window.selectTopPlace = (index) => {
 
     if (place.name && place.lat && place.lng) {
         closeTopPlaces();
-        currentPlaceName = place.name;
-        currentPos = { lat: place.lat, lng: place.lng };
 
-        // Navigate to checkin card
-        CardStack.currentIndex = 1;
-        CardStack.updatePositions();
-        CardStack.loadCardContent(1);
+        // Guardar directamente el check-in
+        const checkin = {
+            id: Date.now(),
+            timestamp: new Date().toISOString(),
+            location: { lat: place.lat, lng: place.lng },
+            placeName: place.name,
+            note: '',
+            photo: null
+        };
 
-        // Set the place
-        setTimeout(() => {
-            document.getElementById('selectedPlaceName').textContent = place.name;
-            document.getElementById('selectedPlaceDisplay').style.display = 'flex';
-            updateLoc(place.lat, place.lng);
-            hasUnsavedChanges = true;
-        }, 100);
+        Storage.saveCheckin(checkin);
 
-        if ('vibrate' in navigator) navigator.vibrate(50);
-        showToast(`Lugar seleccionado: ${place.name}`);
+        if ('vibrate' in navigator) navigator.vibrate([50, 100, 50]);
+        showToast(`¡Yeah guardado en ${place.name}!`, 'success');
+
+        // Refresh map and stats
+        if (mainMap) {
+            Maps.addCheckinsToMap(mainMap, Storage.getAllCheckins());
+            mainMap.setView([place.lat, place.lng], 16);
+        }
+        updateQuickStats();
     }
 };
 
@@ -776,34 +825,100 @@ window.closeEditTopPlaces = () => {
     document.getElementById('editTopPlacesModal').close();
 };
 
+let editingTopPlaceIndex = null;
+let selectedTopPlaceLocation = null;
+
 window.editTopPlace = (index) => {
+    editingTopPlaceIndex = index;
+    selectedTopPlaceLocation = null;
+
     const places = Storage.getTopPlaces();
     const place = places[index];
 
-    const name = prompt('Nombre del lugar:', place.name || '');
-    if (name === null) return; // Cancelled
+    // Pre-fill with existing data
+    document.getElementById('topPlaceName').value = place.name || '';
+    document.getElementById('topPlaceIcon').value = place.icon || '📍';
 
-    const lat = prompt('Latitud:', place.lat || '');
-    if (lat === null) return;
+    if (place.lat && place.lng) {
+        selectedTopPlaceLocation = { name: place.name, lat: place.lat, lng: place.lng };
+        showSelectedTopPlaceLocation(place.name, place.lat, place.lng);
+    } else {
+        document.getElementById('topPlaceSelectedLocation').style.display = 'none';
+    }
 
-    const lng = prompt('Longitud:', place.lng || '');
-    if (lng === null) return;
+    // Load visited places
+    loadVisitedPlacesForTopPlace();
 
-    const icon = prompt('Emoji/Icono:', place.icon || '📍');
-    if (icon === null) return;
+    // Clear search
+    document.getElementById('topPlaceSearch').value = '';
+    document.getElementById('topPlaceSearchResults').innerHTML = '';
 
-    if (name && lat && lng) {
-        Storage.updateTopPlace(index, {
-            name: name.trim(),
-            lat: parseFloat(lat),
-            lng: parseFloat(lng),
-            icon: icon || '📍'
+    // Open modal
+    closeEditTopPlaces();
+    document.getElementById('editSingleTopPlaceModal').showModal();
+};
+
+function loadVisitedPlacesForTopPlace() {
+    const checkins = Storage.getAllCheckins();
+    const container = document.getElementById('topPlaceVisitedPlaces');
+
+    // Get most visited places
+    const placeCounts = {};
+    checkins.forEach(c => {
+        if (c.placeName) {
+            const key = `${c.placeName}|${c.location.lat}|${c.location.lng}`;
+            placeCounts[key] = (placeCounts[key] || 0) + 1;
+        }
+    });
+
+    const sortedPlaces = Object.entries(placeCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([key]) => {
+            const [name, lat, lng] = key.split('|');
+            return { name, lat: parseFloat(lat), lng: parseFloat(lng) };
         });
 
-        showToast('Lugar actualizado');
-        showEditTopPlacesModal(); // Refresh
-        if ('vibrate' in navigator) navigator.vibrate(50);
+    if (sortedPlaces.length > 0) {
+        container.innerHTML = `
+            <div style="font-weight:600; font-size:0.85rem; color:var(--text-secondary); margin-bottom:0.5rem; text-transform:uppercase;">Lugares más visitados:</div>
+            ${sortedPlaces.map(p => `
+                <div class="place-item" onclick="selectVisitedPlaceForTop('${p.name.replace(/'/g, "\\'")}', ${p.lat}, ${p.lng})">
+                    📍 ${p.name}
+                </div>
+            `).join('')}
+        `;
     } else {
-        showToast('Faltan datos', 'error');
+        container.innerHTML = '<p style="opacity:0.6; text-align:center; font-size:0.9rem;">Aún no tienes lugares visitados</p>';
     }
+}
+
+window.selectVisitedPlaceForTop = (name, lat, lng) => {
+    selectedTopPlaceLocation = { name, lat, lng };
+    showSelectedTopPlaceLocation(name, lat, lng);
+    if (!document.getElementById('topPlaceName').value) {
+        document.getElementById('topPlaceName').value = name;
+    }
+};
+
+window.selectSearchedPlaceForTop = (name, lat, lng) => {
+    selectedTopPlaceLocation = { name, lat: parseFloat(lat), lng: parseFloat(lng) };
+    showSelectedTopPlaceLocation(name, parseFloat(lat), parseFloat(lng));
+    if (!document.getElementById('topPlaceName').value) {
+        document.getElementById('topPlaceName').value = name;
+    }
+    document.getElementById('topPlaceSearchResults').innerHTML = '';
+    document.getElementById('topPlaceSearch').value = '';
+};
+
+function showSelectedTopPlaceLocation(name, lat, lng) {
+    document.getElementById('topPlaceSelectedName').textContent = name;
+    document.getElementById('topPlaceSelectedCoords').textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    document.getElementById('topPlaceSelectedLocation').style.display = 'block';
+}
+
+window.closeEditSingleTopPlace = () => {
+    document.getElementById('editSingleTopPlaceModal').close();
+    editingTopPlaceIndex = null;
+    selectedTopPlaceLocation = null;
 };
