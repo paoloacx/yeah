@@ -69,7 +69,7 @@
                     <div id="mapPreview" class="map-preview"></div>
                     <button id="centerPreviewBtn" class="map-center-btn" title="Centrar en mi ubicación">📍</button>
                 </div>
-                
+
                 <div class="form-section">
                     <div style="display: flex; gap:0.5rem">
                         <input type="text" id="placeSearch" placeholder="Buscar lugar cercano..." style="margin-bottom:0">
@@ -78,23 +78,35 @@
                     <div id="placeResults" class="place-results"></div>
                 </div>
 
-                <div class="form-section" style="margin-top: 1rem;">
-                    <label for="placeNote">Nota</label>
-                    <textarea id="placeNote" rows="3" placeholder="Cuéntame más..."></textarea>
+                <div id="selectedPlaceDisplay" class="selected-place" style="display: none;">
+                    <span class="place-icon">📍</span>
+                    <span id="selectedPlaceName"></span>
+                    <button id="clearPlace" class="clear-place-btn">✕</button>
                 </div>
 
-                <div class="form-section" id="dateTimeSection" style="display: none;">
-                    <label for="checkinDate">Fecha y Hora</label>
-                    <div style="display: flex; gap: 0.5rem;">
-                        <input type="date" id="checkinDate" style="flex: 1; margin-bottom: 0;">
-                        <input type="time" id="checkinTime" style="flex: 1; margin-bottom: 0;">
+                <button id="toggleDetailsBtn" class="toggle-details-btn">
+                    <span id="toggleDetailsIcon">▼</span> Añadir detalles
+                </button>
+
+                <div id="detailsSection" style="display: none;">
+                    <div class="form-section">
+                        <label for="placeNote">Nota</label>
+                        <textarea id="placeNote" rows="3" placeholder="Cuéntame más..."></textarea>
                     </div>
-                </div>
 
-                <div class="form-section">
-                    <label for="photoInput">Añadir Foto</label>
-                    <input type="file" id="photoInput" accept="image/*">
-                    <img id="photoPreview" src="#" alt="Vista previa" style="display: none; width: 100%; max-height: 200px; object-fit: cover; border-radius: 12px; margin-top: 1rem;">
+                    <div class="form-section" id="dateTimeSection" style="display: none;">
+                        <label for="checkinDate">Fecha y Hora</label>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <input type="date" id="checkinDate" style="flex: 1; margin-bottom: 0;">
+                            <input type="time" id="checkinTime" style="flex: 1; margin-bottom: 0;">
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <label for="photoInput">Añadir Foto</label>
+                        <input type="file" id="photoInput" accept="image/*">
+                        <img id="photoPreview" src="#" alt="Vista previa" style="display: none; width: 100%; max-height: 200px; object-fit: cover; border-radius: 12px; margin-top: 1rem;">
+                    </div>
                 </div>
 
                 <button id="saveCheckin" class="btn-primary">Guardar Yeah¡</button>

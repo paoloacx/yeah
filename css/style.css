@@ -450,3 +450,76 @@ input:focus, textarea:focus, select:focus {
     transform: scale(0.95);
     box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
 }
+
+/* SELECTED PLACE DISPLAY */
+.selected-place {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.8rem 1rem;
+    background: var(--card-bg);
+    border-radius: 16px;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    font-size: 0.95rem;
+    color: var(--text-primary);
+}
+.selected-place .place-icon {
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+.selected-place span:nth-child(2) {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.clear-place-btn {
+    background: rgba(0, 0, 0, 0.1);
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+    transition: all 0.2s;
+}
+.clear-place-btn:hover {
+    background: rgba(0, 0, 0, 0.15);
+}
+.clear-place-btn:active {
+    transform: scale(0.9);
+}
+
+/* TOGGLE DETAILS BUTTON */
+.toggle-details-btn {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    border: none;
+    border-radius: 16px;
+    background: var(--input-bg);
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 1rem;
+    transition: all 0.2s;
+    text-align: left;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+.toggle-details-btn:active {
+    transform: scale(0.98);
+}
+.toggle-details-btn #toggleDetailsIcon {
+    display: inline-block;
+    transition: transform 0.3s;
+    margin-right: 0.3rem;
+}
+.toggle-details-btn.active #toggleDetailsIcon {
+    transform: rotate(180deg);
+}

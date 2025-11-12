@@ -103,6 +103,7 @@ const CardStack = {
 // --- App Globals & Init ---
 let mainMap, checkinMap, detailsMap, heatMapInstance, currentPos, editingId = null, watchId = null, marker = null;
 let currentPhoto = null;
+let currentPlaceName = null;
 let hasUnsavedChanges = false;
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -123,6 +124,24 @@ document.addEventListener('DOMContentLoaded', () => {
         CardStack.updatePositions();
         CardStack.loadCardContent(3);
         if ('vibrate' in navigator) navigator.vibrate(50);
+    });
+
+    // Toggle details section
+    document.getElementById('toggleDetailsBtn').addEventListener('click', () => {
+        const detailsSection = document.getElementById('detailsSection');
+        const toggleBtn = document.getElementById('toggleDetailsBtn');
+        const isVisible = detailsSection.style.display !== 'none';
+
+        detailsSection.style.display = isVisible ? 'none' : 'block';
+        toggleBtn.classList.toggle('active', !isVisible);
+    });
+
+    // Clear selected place
+    document.getElementById('clearPlace').addEventListener('click', () => {
+        currentPlaceName = null;
+        document.getElementById('selectedPlaceDisplay').style.display = 'none';
+        document.getElementById('selectedPlaceName').textContent = '';
+        hasUnsavedChanges = true;
     });
 
     // Track unsaved changes
@@ -267,6 +286,7 @@ function updateQuickStats() {
 function resetCheckin() {
     editingId = null;
     currentPhoto = null;
+    currentPlaceName = null;
     hasUnsavedChanges = false;
     document.getElementById('cardTitleCheckin').textContent = 'Nuevo Yeah¡';
     document.getElementById('saveCheckin').textContent = 'Guardar Yeah¡';
@@ -276,7 +296,13 @@ function resetCheckin() {
     document.getElementById('photoPreview').src = '#';
     document.getElementById('placeSearch').value = '';
     document.getElementById('placeResults').innerHTML = '';
-    
+    document.getElementById('selectedPlaceDisplay').style.display = 'none';
+    document.getElementById('selectedPlaceName').textContent = '';
+
+    // Collapse details section
+    document.getElementById('detailsSection').style.display = 'none';
+    document.getElementById('toggleDetailsBtn').classList.remove('active');
+
     document.getElementById('dateTimeSection').style.display = 'none';
     
     const now = new Date();
@@ -354,9 +380,14 @@ document.getElementById('searchBtn').onclick = () => {
 };
 
 window.selectPlace = (name, lat, lng) => {
-    document.getElementById('placeNote').value = (document.getElementById('placeNote').value + ' ' + name).trim();
+    currentPlaceName = name;
+    document.getElementById('selectedPlaceName').textContent = name;
+    document.getElementById('selectedPlaceDisplay').style.display = 'flex';
     document.getElementById('placeResults').innerHTML = '';
+    document.getElementById('placeSearch').value = '';
     updateLoc(parseFloat(lat), parseFloat(lng));
+    hasUnsavedChanges = true;
+    if ('vibrate' in navigator) navigator.vibrate(30);
 };
 
 // --- Photo Handling ---
@@ -403,6 +434,7 @@ document.getElementById('saveCheckin').onclick = () => {
         id: editingId || Date.now(),
         timestamp: timestamp,
         location: currentPos,
+        placeName: currentPlaceName || null,
         note: document.getElementById('placeNote').value.trim(),
         photo: currentPhoto
     };
@@ -420,17 +452,31 @@ document.getElementById('saveCheckin').onclick = () => {
 
 window.editCheckin = (id) => {
     const c = Storage.getCheckin(id); if (!c) return;
-    editingId = id; currentPos = c.location; currentPhoto = c.photo || null;
+    editingId = id; currentPos = c.location; currentPhoto = c.photo || null; currentPlaceName = c.placeName || null;
     document.getElementById('cardTitleCheckin').textContent = 'Editando Yeah¡';
     document.getElementById('saveCheckin').textContent = 'Actualizar Yeah¡';
     document.getElementById('placeNote').value = c.note || '';
-    
+
+    // Show place name if exists
+    if (currentPlaceName) {
+        document.getElementById('selectedPlaceName').textContent = currentPlaceName;
+        document.getElementById('selectedPlaceDisplay').style.display = 'flex';
+    } else {
+        document.getElementById('selectedPlaceDisplay').style.display = 'none';
+    }
+
+    // Expand details section if there's note or photo
+    if (c.note || c.photo) {
+        document.getElementById('detailsSection').style.display = 'block';
+        document.getElementById('toggleDetailsBtn').classList.add('active');
+    }
+
     document.getElementById('dateTimeSection').style.display = 'block';
-    
+
     const checkinDate = new Date(c.timestamp);
     document.getElementById('checkinDate').value = checkinDate.toISOString().split('T')[0];
     document.getElementById('checkinTime').value = checkinDate.toTimeString().slice(0, 5);
-    
+
     if (currentPhoto) {
         document.getElementById('photoPreview').src = currentPhoto;
         document.getElementById('photoPreview').style.display = 'block';
@@ -537,7 +583,9 @@ function loadHistory() {
                  <span class="date-time">${dF.format(new Date(c.timestamp))} • ${tF.format(new Date(c.timestamp))}</span>
                  ${c.photo ? '<span style="font-size:1.2rem;">📷</span>' : ''}
             </div>
-            ${c.note ? `<p class="note-text">${c.note}</p>` : '<p class="note-text" style="opacity:0.5">Sin nota</p>'}
+            ${c.placeName ? `<p class="note-text" style="font-weight:600;">📍 ${c.placeName}</p>` : ''}
+            ${c.note ? `<p class="note-text" style="opacity:0.8;font-size:0.95rem;margin-top:0.3rem;">${c.note}</p>` : ''}
+            ${!c.placeName && !c.note ? '<p class="note-text" style="opacity:0.5">Sin detalles</p>' : ''}
         </div>
     `).join('');
 }
@@ -557,8 +605,9 @@ window.showDetails = (id) => {
 
     document.getElementById('detailsInfo').innerHTML = `
         <p style="font-size:0.9rem; color:#90A4AE; font-weight:600; margin-bottom:0.5rem">${dF.format(new Date(c.timestamp))}</p>
-        <p style="font-size:1.2rem; color:#37474F; margin-bottom:1rem">${c.note || '<i style="opacity:0.6">Sin nota</i>'}</p>
-        <p style="font-family:monospace; color:#B0BEC5">${c.location.lat.toFixed(6)}, ${c.location.lng.toFixed(6)}</p>
+        ${c.placeName ? `<p style="font-size:1.2rem; color:#37474F; font-weight:700; margin-bottom:0.5rem">📍 ${c.placeName}</p>` : ''}
+        ${c.note ? `<p style="font-size:1.1rem; color:#546E7A; margin-bottom:1rem">${c.note}</p>` : ''}
+        <p style="font-family:monospace; color:#B0BEC5; font-size:0.85rem">${c.location.lat.toFixed(6)}, ${c.location.lng.toFixed(6)}</p>
     `;
 
     document.getElementById('btnEdit').onclick = () => { closeDetails(); editCheckin(id); };
