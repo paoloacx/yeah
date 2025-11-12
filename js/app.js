@@ -108,7 +108,15 @@ let hasUnsavedChanges = false;
 document.addEventListener('DOMContentLoaded', () => {
     CardStack.init();
     initTopoBackground();
-    
+
+    // New Yeah button
+    document.getElementById('newYeahBtn').addEventListener('click', () => {
+        CardStack.currentIndex = 1;
+        CardStack.updatePositions();
+        CardStack.loadCardContent(1);
+        if ('vibrate' in navigator) navigator.vibrate(50);
+    });
+
     // Track unsaved changes
     document.getElementById('placeNote').addEventListener('input', () => hasUnsavedChanges = true);
     document.getElementById('photoInput').addEventListener('change', () => hasUnsavedChanges = true);
