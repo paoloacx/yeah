@@ -1,8 +1,14 @@
 const Maps = {
     // Crear mapa con Leaflet
     createMap(elementId, lat, lng, zoom = 13) {
+        // Limpiar el contenedor antes de crear el mapa
+        const container = L.DomUtil.get(elementId);
+        if (container != null) {
+            container._leaflet_id = null;
+        }
+
         const map = L.map(elementId).setView([lat, lng], zoom);
-        
+
         // CartoDB Positron - estilo limpio y claro
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors',
