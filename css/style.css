@@ -284,11 +284,10 @@ input:focus, textarea:focus, select:focus {
 /* Contenedor específico para el mapa de la Home para asegurar redondeo */
 .map-home-container {
     width: 100%; height: 350px;
-    border-radius: 0px;
+    border-radius: 24px;
     overflow: hidden;
     margin-bottom: 1.5rem;
-    filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.4)) drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
-    -webkit-mask-image: -webkit-radial-gradient(white, black);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 .map-home {
     width: 100%; height: 100%;
@@ -303,8 +302,14 @@ input:focus, textarea:focus, select:focus {
 .quick-stats {
     text-align: center; padding: 1rem;
     background: var(--card-bg); border-radius: 20px;
-    box-shadow: 0 4px 15px -5px rgba(0,0,0,0.1);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.2);
     font-size: 1.1rem; color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.quick-stats:active {
+    transform: scale(0.98);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 .quick-stats strong { color: var(--primary-color); }
 

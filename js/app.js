@@ -117,6 +117,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if ('vibrate' in navigator) navigator.vibrate(50);
     });
 
+    // Quick stats - navigate to stats card
+    document.getElementById('quickStats').addEventListener('click', () => {
+        CardStack.currentIndex = 3;
+        CardStack.updatePositions();
+        CardStack.loadCardContent(3);
+        if ('vibrate' in navigator) navigator.vibrate(50);
+    });
+
     // Track unsaved changes
     document.getElementById('placeNote').addEventListener('input', () => hasUnsavedChanges = true);
     document.getElementById('photoInput').addEventListener('change', () => hasUnsavedChanges = true);
