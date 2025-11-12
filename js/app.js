@@ -118,6 +118,18 @@ document.addEventListener('DOMContentLoaded', () => {
         if ('vibrate' in navigator) navigator.vibrate(50);
     });
 
+    // Top Yeah button - open top places modal
+    document.getElementById('topYeahBtn').addEventListener('click', () => {
+        showTopPlacesModal();
+        if ('vibrate' in navigator) navigator.vibrate(50);
+    });
+
+    // Edit top places button in stats
+    document.getElementById('editTopPlacesBtn').addEventListener('click', () => {
+        showEditTopPlacesModal();
+        if ('vibrate' in navigator) navigator.vibrate(50);
+    });
+
     // Quick stats - navigate to stats card
     document.getElementById('quickStats').addEventListener('click', () => {
         CardStack.currentIndex = 3;
@@ -675,3 +687,123 @@ function loadChart(data, id, keyFn, labelFn) {
         <div class="bar-container"><div class="bar-fill" style="width:${(v/max)*100}%"></div></div>
         <span class="bar-value">${v}</span></div>`).join('') : '<p style="opacity:0.6;text-align:center">Sin datos</p>';
 }
+
+// --- Top Places Modal ---
+function showTopPlacesModal() {
+    const places = Storage.getTopPlaces();
+    const list = document.getElementById('topPlacesList');
+
+    list.innerHTML = places.map((place, i) => {
+        if (place.name && place.lat && place.lng) {
+            return `
+                <div class="top-place-item" onclick="selectTopPlace(${i})">
+                    <span class="icon">${place.icon}</span>
+                    <div class="info">
+                        <div class="name">${place.name}</div>
+                        <div class="coords">${place.lat.toFixed(6)}, ${place.lng.toFixed(6)}</div>
+                    </div>
+                </div>
+            `;
+        } else {
+            return `
+                <div class="top-place-item empty">
+                    <span class="icon">➕</span>
+                    <div class="info">
+                        <div class="name">Lugar vacío</div>
+                        <div class="coords">Configura en Estadísticas</div>
+                    </div>
+                </div>
+            `;
+        }
+    }).join('');
+
+    document.getElementById('topPlacesModal').showModal();
+}
+
+window.closeTopPlaces = () => {
+    document.getElementById('topPlacesModal').close();
+};
+
+window.selectTopPlace = (index) => {
+    const places = Storage.getTopPlaces();
+    const place = places[index];
+
+    if (place.name && place.lat && place.lng) {
+        closeTopPlaces();
+        currentPlaceName = place.name;
+        currentPos = { lat: place.lat, lng: place.lng };
+
+        // Navigate to checkin card
+        CardStack.currentIndex = 1;
+        CardStack.updatePositions();
+        CardStack.loadCardContent(1);
+
+        // Set the place
+        setTimeout(() => {
+            document.getElementById('selectedPlaceName').textContent = place.name;
+            document.getElementById('selectedPlaceDisplay').style.display = 'flex';
+            updateLoc(place.lat, place.lng);
+            hasUnsavedChanges = true;
+        }, 100);
+
+        if ('vibrate' in navigator) navigator.vibrate(50);
+        showToast(`Lugar seleccionado: ${place.name}`);
+    }
+};
+
+// --- Edit Top Places Modal ---
+function showEditTopPlacesModal() {
+    const places = Storage.getTopPlaces();
+    const list = document.getElementById('editTopPlacesList');
+
+    list.innerHTML = places.map((place, i) => {
+        const hasData = place.name && place.lat && place.lng;
+        return `
+            <div class="top-place-item ${hasData ? '' : 'empty'}" onclick="editTopPlace(${i})">
+                <span class="icon">${place.icon}</span>
+                <div class="info">
+                    <div class="name">${hasData ? place.name : 'Lugar vacío - Click para editar'}</div>
+                    ${hasData ? `<div class="coords">${place.lat.toFixed(6)}, ${place.lng.toFixed(6)}</div>` : '<div class="coords">Sin configurar</div>'}
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    document.getElementById('editTopPlacesModal').showModal();
+}
+
+window.closeEditTopPlaces = () => {
+    document.getElementById('editTopPlacesModal').close();
+};
+
+window.editTopPlace = (index) => {
+    const places = Storage.getTopPlaces();
+    const place = places[index];
+
+    const name = prompt('Nombre del lugar:', place.name || '');
+    if (name === null) return; // Cancelled
+
+    const lat = prompt('Latitud:', place.lat || '');
+    if (lat === null) return;
+
+    const lng = prompt('Longitud:', place.lng || '');
+    if (lng === null) return;
+
+    const icon = prompt('Emoji/Icono:', place.icon || '📍');
+    if (icon === null) return;
+
+    if (name && lat && lng) {
+        Storage.updateTopPlace(index, {
+            name: name.trim(),
+            lat: parseFloat(lat),
+            lng: parseFloat(lng),
+            icon: icon || '📍'
+        });
+
+        showToast('Lugar actualizado');
+        showEditTopPlacesModal(); // Refresh
+        if ('vibrate' in navigator) navigator.vibrate(50);
+    } else {
+        showToast('Faltan datos', 'error');
+    }
+};

@@ -53,6 +53,7 @@
                     <button id="centerMapBtn" class="map-center-btn" title="Centrar en mi ubicación">📍</button>
                 </div>
                 <button id="newYeahBtn" class="btn-new-yeah">Nuevo yeah¡</button>
+                <button id="topYeahBtn" class="btn-top-yeah">⭐ Top Yeah¡</button>
                 <div id="quickStats" class="quick-stats"></div>
             </div>
         </div>
@@ -163,8 +164,13 @@
                     </div>
                 </div>
                 <div class="stats-section">
-                    <h2>Lugares top</h2>
+                    <h2>Lugares top (más visitados)</h2>
                     <div id="topPlaces" class="top-list"></div>
+                </div>
+                <div class="stats-section">
+                    <h2>⭐ Mis Lugares TOP</h2>
+                    <p style="color:var(--text-secondary); margin-bottom:1rem; font-size:0.9rem;">Personaliza tus 10 lugares favoritos para check-in rápido</p>
+                    <button id="editTopPlacesBtn" class="btn-primary">✏️ Editar Lugares TOP</button>
                 </div>
                 <div class="stats-section">
                     <h2>Por mes</h2>
@@ -236,6 +242,28 @@
                 <button id="btnEdit" class="btn-secondary" style="flex:1">✏️ Editar</button>
                 <button id="btnDelete" class="btn-secondary" style="flex:1; color:var(--danger-color); border-color:#FFEBEE; background:#FFEBEE;">🗑️ Borrar</button>
             </div>
+        </div>
+    </dialog>
+
+    <dialog id="topPlacesModal" class="modal">
+        <div class="modal-header">
+            <h2>⭐ Top Yeah¡</h2>
+            <button class="btn-icon" onclick="closeTopPlaces()" style="width:32px; height:32px; background:#ECEFF1;">✕</button>
+        </div>
+        <div class="modal-content">
+            <p style="color:var(--text-secondary); margin-bottom:1rem; font-size:0.9rem;">Selecciona un lugar favorito para hacer check-in rápido</p>
+            <div id="topPlacesList" class="top-places-list"></div>
+        </div>
+    </dialog>
+
+    <dialog id="editTopPlacesModal" class="modal">
+        <div class="modal-header">
+            <h2>Editar Lugares TOP</h2>
+            <button class="btn-icon" onclick="closeEditTopPlaces()" style="width:32px; height:32px; background:#ECEFF1;">✕</button>
+        </div>
+        <div class="modal-content">
+            <p style="color:var(--text-secondary); margin-bottom:1rem; font-size:0.9rem;">Personaliza tus 10 lugares favoritos. Haz click en cada uno para editarlo.</p>
+            <div id="editTopPlacesList" class="edit-top-places-list"></div>
         </div>
     </dialog>
 

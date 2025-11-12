@@ -1,5 +1,6 @@
 const Storage = {
     CHECKINS_KEY: 'yeah_checkins',
+    TOP_PLACES_KEY: 'yeah_top_places',
 
     // Obtener todos los check-ins
     getAllCheckins() {
@@ -79,5 +80,35 @@ const Storage = {
     // Limpiar todos los datos
     clearAll() {
         localStorage.removeItem(this.CHECKINS_KEY);
+    },
+
+    // --- Top Places Management ---
+    getTopPlaces() {
+        const data = localStorage.getItem(this.TOP_PLACES_KEY);
+        if (data) {
+            return JSON.parse(data);
+        }
+        // Default 10 empty slots
+        return Array(10).fill(null).map((_, i) => ({
+            id: i,
+            name: '',
+            lat: null,
+            lng: null,
+            icon: '📍'
+        }));
+    },
+
+    saveTopPlaces(places) {
+        localStorage.setItem(this.TOP_PLACES_KEY, JSON.stringify(places));
+    },
+
+    updateTopPlace(index, placeData) {
+        const places = this.getTopPlaces();
+        if (index >= 0 && index < 10) {
+            places[index] = { ...places[index], ...placeData };
+            this.saveTopPlaces(places);
+            return places[index];
+        }
+        return null;
     }
 };
