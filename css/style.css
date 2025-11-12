@@ -433,43 +433,43 @@ input:focus, textarea:focus, select:focus {
 /* NEW YEAH BUTTON */
 .btn-new-yeah {
     width: 100%;
-    padding: 1.2rem;
+    padding: 1.1rem;
     border: none;
     border-radius: 50px;
     background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
     color: white;
-    font-size: 1.1rem;
+    font-size: 1.05rem;
     font-weight: 700;
     cursor: pointer;
     margin-bottom: 1rem;
-    box-shadow: 0 8px 24px rgba(76, 175, 80, 0.4);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.2);
     transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 .btn-new-yeah:active {
     transform: scale(0.95);
-    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 /* TOP YEAH BUTTON */
 .btn-top-yeah {
     width: 100%;
-    padding: 1rem;
+    padding: 1.1rem;
     border: none;
     border-radius: 50px;
     background: linear-gradient(135deg, #26C6DA, #00ACC1);
     color: white;
-    font-size: 1rem;
+    font-size: 1.05rem;
     font-weight: 700;
     cursor: pointer;
     margin-bottom: 1.5rem;
-    box-shadow: 0 8px 24px rgba(38, 198, 218, 0.4);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.2);
     transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 .btn-top-yeah:active {
     transform: scale(0.95);
-    box-shadow: 0 4px 12px rgba(38, 198, 218, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 /* SELECTED PLACE DISPLAY */

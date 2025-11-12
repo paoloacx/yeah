@@ -698,10 +698,29 @@ function loadStats() {
     document.getElementById('statPhotos').textContent = checkins.filter(c => c.photo).length;
     document.getElementById('statNotes').textContent = checkins.filter(c => c.note && c.note.trim()).length;
     
-    const places = {}; checkins.forEach(c => { const k = `${c.location.lat.toFixed(3)}, ${c.location.lng.toFixed(3)}`; places[k] = (places[k]||0)+1; });
-    const sortedPlaces = Object.entries(places).sort((a,b) => b[1]-a[1]).slice(0,5);
-    document.getElementById('topPlaces').innerHTML = sortedPlaces.length ? sortedPlaces.map(([k,v]) => 
-        `<div class="top-item"><span>📍 ${k}</span><span class="place-count">${v}</span></div>`).join('') : '<p style="opacity:0.6;text-align:center">Sin datos</p>';
+    // Agrupar por lugar (usando placeName si existe, si no coordenadas)
+    const placeData = {};
+    checkins.forEach(c => {
+        let key, displayName;
+        if (c.placeName) {
+            key = c.placeName;
+            displayName = c.placeName;
+        } else {
+            key = `${c.location.lat.toFixed(3)},${c.location.lng.toFixed(3)}`;
+            displayName = `${c.location.lat.toFixed(4)}, ${c.location.lng.toFixed(4)}`;
+        }
+        if (!placeData[key]) {
+            placeData[key] = { count: 0, displayName: displayName };
+        }
+        placeData[key].count++;
+    });
+
+    const sortedPlaces = Object.entries(placeData)
+        .sort((a, b) => b[1].count - a[1].count)
+        .slice(0, 5);
+
+    document.getElementById('topPlaces').innerHTML = sortedPlaces.length ? sortedPlaces.map(([key, data]) =>
+        `<div class="top-item"><span>📍 ${data.displayName}</span><span class="place-count">${data.count}</span></div>`).join('') : '<p style="opacity:0.6;text-align:center">Sin datos</p>';
 
     loadChart(checkins, 'monthlyChart', c => new Date(c.timestamp).toISOString().slice(0,7), (k) => {
         const [y, m] = k.split('-'); return new Date(y, m-1).toLocaleDateString('es-ES',{month:'short'});
