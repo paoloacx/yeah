@@ -497,6 +497,13 @@ window.selectPlace = (name, lat, lng) => {
     document.getElementById('selectedPlaceDisplay').style.display = 'flex';
     document.getElementById('placeResults').innerHTML = '';
     document.getElementById('placeSearch').value = '';
+
+    // Stop GPS tracking when manually selecting a place
+    if (watchId) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+    }
+
     updateLoc(parseFloat(lat), parseFloat(lng));
     hasUnsavedChanges = true;
     if ('vibrate' in navigator) navigator.vibrate(30);
