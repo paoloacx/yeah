@@ -578,13 +578,22 @@ document.getElementById('exportICal').onclick = () => {
     let ics = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Yeah App//NONSGML v1.0//EN\n";
     data.forEach(c => {
         const d = new Date(c.timestamp).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-        const locationCoords = `${c.location.lat.toFixed(6)}, ${c.location.lng.toFixed(6)}`;
+
+        // Nombre del evento: placeName o coordenadas, seguido de " - Yeah¡"
+        const eventName = c.placeName
+            ? `${c.placeName} - Yeah¡`
+            : `${c.location.lat.toFixed(4)}, ${c.location.lng.toFixed(4)} - Yeah¡`;
+
+        // Ubicación: URL de coordenadas para calendarios
+        const locationUrl = `geo:${c.location.lat},${c.location.lng}`;
+
+        // Descripción: notas si existen
         const description = c.note || '';
-        
+
         ics += "BEGIN:VEVENT\n" +
                `UID:${c.id}@yeah.app\nDTSTAMP:${d}\nDTSTART:${d}\n` +
-               `SUMMARY:${locationCoords} Yeah¡\n` +
-               `LOCATION:${locationCoords}\n` +
+               `SUMMARY:${eventName}\n` +
+               `LOCATION:${locationUrl}\n` +
                `DESCRIPTION:${description}\n` +
                `GEO:${c.location.lat};${c.location.lng}\nEND:VEVENT\n`;
     });
