@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#CFD8DC">
+    <title>Yeah¡</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="manifest" href="manifest.json">
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+    <div id="loader" class="loader-overlay">
+        <div class="loader-content">
+            <div class="loader-logo">Yeah¡</div>
+            <div class="loader-spinner"></div>
+        </div>
+    </div>
+    
+    <div id="background">
+        <svg width="100%" height="100%" viewBox="0 0 1200 2000" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <radialGradient id="glow" cx="50%" cy="65%" r="60%">
+                    <stop offset="0%" stop-color="#4e6aff" stop-opacity="0.22" />
+                    <stop offset="60%" stop-color="#1b2336" stop-opacity="0.35" />
+                    <stop offset="100%" stop-color="#0c0f13" stop-opacity="1" />
+                </radialGradient>
+                <filter id="grain">
+                    <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" stitchTiles="stitch"/>
+                    <feColorMatrix type="saturate" values="0"/>
+                    <feComponentTransfer><feFuncA type="linear" slope="0.9"/></feComponentTransfer>
+                </filter>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#glow)" />
+            <rect width="100%" height="100%" filter="url(#grain)" />
+        </svg>
+        <canvas id="topoCanvas"></canvas>
+    </div>
+
+    <div id="cardStack">
+        
+        <div class="card" data-position="0" data-card="map">
+            <div class="card-header">
+                <h1>Yeah¡</h1>
+                <div class="card-indicator">
+                    <span class="dot active"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                </div>
+            </div>
+            <div class="card-content">
+                <div class="map-home-container">
+                    <div id="map" class="map-home"></div>
+                    <button id="centerMapBtn" class="map-center-btn" title="Centrar en mi ubicación">📍</button>
+                </div>
+                <button id="newYeahBtn" class="btn-new-yeah">Nuevo yeah¡</button>
+                <button id="topYeahBtn" class="btn-top-yeah">Top Yeah¡</button>
+                <div id="quickStats" class="quick-stats"></div>
+            </div>
+        </div>
+
+        <div class="card" data-position="1" data-card="checkin">
+            <div class="card-header">
+                <h1 id="cardTitleCheckin">Nuevo Yeah¡</h1>
+                <div class="card-indicator">
+                    <span class="dot"></span><span class="dot active"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                </div>
+            </div>
+            <div class="card-content">
+                <div style="position: relative;">
+                    <div id="mapPreview" class="map-preview"></div>
+                    <button id="centerPreviewBtn" class="map-center-btn" title="Centrar en mi ubicación">📍</button>
+                </div>
+
+                <div class="form-section">
+                    <div style="display: flex; gap:0.5rem">
+                        <input type="text" id="placeSearch" placeholder="Buscar lugar cercano..." style="margin-bottom:0">
+                        <button id="searchBtn" class="btn-icon" style="background:var(--primary-color); color:white; flex-shrink:0">🔍</button>
+                    </div>
+                    <div id="placeResults" class="place-results"></div>
+                </div>
+
+                <div id="selectedPlaceDisplay" class="selected-place" style="display: none;">
+                    <span class="place-icon">📍</span>
+                    <span id="selectedPlaceName"></span>
+                    <button id="clearPlace" class="clear-place-btn">✕</button>
+                </div>
+
+                <button id="toggleDetailsBtn" class="toggle-details-btn">
+                    <span id="toggleDetailsIcon">▼</span> Añadir detalles
+                </button>
+
+                <div id="detailsSection" style="display: none;">
+                    <div class="form-section">
+                        <label for="placeNote">Nota</label>
+                        <textarea id="placeNote" rows="3" placeholder="Cuéntame más..."></textarea>
+                    </div>
+
+                    <div class="form-section" id="dateTimeSection" style="display: none;">
+                        <label for="checkinDate">Fecha y Hora</label>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <input type="date" id="checkinDate" style="flex: 1; margin-bottom: 0;">
+                            <input type="time" id="checkinTime" style="flex: 1; margin-bottom: 0;">
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <label for="photoInput">Añadir Foto</label>
+                        <input type="file" id="photoInput" accept="image/*">
+                        <img id="photoPreview" src="#" alt="Vista previa" style="display: none; width: 100%; max-height: 200px; object-fit: cover; border-radius: 12px; margin-top: 1rem;">
+                    </div>
+                </div>
+
+                <button id="saveCheckin" class="btn-primary">Guardar Yeah¡</button>
+            </div>
+        </div>
+
+        <div class="card" data-position="2" data-card="history">
+            <div class="card-header">
+                <h1>Historial</h1>
+                <div class="card-indicator">
+                    <span class="dot"></span><span class="dot"></span><span class="dot active"></span><span class="dot"></span><span class="dot"></span>
+                </div>
+            </div>
+            <div class="card-content">
+                <div class="filter-section">
+                    <input type="text" id="searchFilter" placeholder="Buscar en tu historial...">
+                    <select id="sortFilter">
+                        <option value="newest">Más recientes</option>
+                        <option value="oldest">Más antiguos</option>
+                    </select>
+                </div>
+
+                <div id="checkinsList" class="checkins-list"></div>
+                <div id="emptyState" class="empty-state" style="display: none;">
+                    <p>No hay Yeahs que coincidan</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" data-position="3" data-card="stats">
+            <div class="card-header">
+                <h1>Estadísticas</h1>
+                <div class="card-indicator">
+                    <span class="dot"></span><span class="dot"></span><span class="dot active"></span><span class="dot"></span><span class="dot"></span>
+                </div>
+            </div>
+            <div class="card-content">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number" id="statTotal">0</div>
+                        <div class="stat-label">Check-ins</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="statPlaces">0</div>
+                        <div class="stat-label">Lugares</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="statPhotos">0</div>
+                        <div class="stat-label">Fotos</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="statNotes">0</div>
+                        <div class="stat-label">Notas</div>
+                    </div>
+                </div>
+                <div class="stats-section">
+                    <h2>Lugares más visitados</h2>
+                    <div id="topPlaces" class="top-list"></div>
+                </div>
+                <div class="stats-section">
+                    <h2>⭐ Mis Lugares TOP</h2>
+                    <p style="color:var(--text-secondary); margin-bottom:1rem; font-size:0.9rem;">Personaliza tus 10 lugares favoritos para check-in rápido</p>
+                    <button id="editTopPlacesBtn" class="btn-primary">✏️ Editar Lugares TOP</button>
+                </div>
+                <div class="stats-section">
+                    <h2>Por mes</h2>
+                    <div id="monthlyChart" class="chart"></div>
+                </div>
+                <div class="stats-section">
+                    <h2>Por día</h2>
+                    <div id="weekdayChart" class="chart"></div>
+                </div>
+                <div class="stats-section">
+                    <h2>Mapa de calor</h2>
+                    <div id="heatMap" class="map-heat"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" data-position="4" data-card="settings">
+            <div class="card-header">
+                <h1>Ajustes</h1>
+                <div class="card-indicator">
+                    <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot active"></span>
+                </div>
+            </div>
+            <div class="card-content">
+                <div class="stats-section">
+                    <h2>Apariencia</h2>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0;">
+                        <span style="font-size: 1rem; color: var(--text-primary);">Modo Oscuro</span>
+                        <label class="theme-switch">
+                            <input type="checkbox" id="darkModeToggle">
+                            <span class="theme-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="stats-section">
+                    <h2>Exportar Datos</h2>
+                    <p style="color:var(--text-secondary); margin-bottom:1rem; font-size:0.9rem;">Guarda tus recuerdos fuera de la app.</p>
+                    <div style="display:grid; gap:0.8rem;">
+                        <button id="exportCSV" class="btn-secondary">📄 Descargar CSV (Excel)</button>
+                        <button id="exportICal" class="btn-secondary">📅 Descargar iCal (Calendario)</button>
+                        <button id="exportJSON" class="btn-secondary">📦 Copia de Seguridad (JSON)</button>
+                    </div>
+                </div>
+
+                <div class="stats-section" style="margin-top:1.5rem">
+                    <h2>Importar</h2>
+                    <p style="color:var(--text-secondary); margin-bottom:1rem; font-size:0.9rem;">Restaura una copia de seguridad JSON.</p>
+                    <input type="file" id="importFile" accept=".json" style="display: none;">
+                    <button id="importJSON" class="btn-primary">📥 Importar Copia de Seguridad</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <dialog id="detailsModal" class="modal">
+        <div class="modal-header">
+            <h2>Detalles del Yeah¡</h2>
+            <button class="btn-icon" onclick="closeDetails()" style="width:32px; height:32px; background:#ECEFF1;">✕</button>
+        </div>
+        <div id="detailsMap" class="map-preview" style="height: 250px; border-radius: 0;"></div>
+        <div class="modal-content">
+            <div id="detailsPhotoContainer" style="display: none; margin-bottom: 1rem;">
+                <img id="detailsPhoto" src="#" alt="Foto del Yeah" style="width: 100%; border-radius: 12px; object-fit: cover;">
+            </div>
+            <div id="detailsInfo"></div>
+            <div class="modal-actions">
+                <button id="btnEdit" class="btn-secondary" style="flex:1">✏️ Editar</button>
+                <button id="btnDelete" class="btn-secondary" style="flex:1; color:var(--danger-color); border-color:#FFEBEE; background:#FFEBEE;">🗑️ Borrar</button>
+            </div>
+        </div>
+    </dialog>
+
+    <dialog id="topPlacesModal" class="modal">
+        <div class="modal-header">
+            <h2>⭐ Top Yeah¡</h2>
+            <button class="btn-icon" onclick="closeTopPlaces()" style="width:32px; height:32px; background:#ECEFF1;">✕</button>
+        </div>
+        <div class="modal-content">
+            <p style="color:var(--text-secondary); margin-bottom:1rem; font-size:0.9rem;">Selecciona un lugar favorito para hacer check-in rápido</p>
+            <div id="topPlacesList" class="top-places-list"></div>
+        </div>
+    </dialog>
+
+    <dialog id="editTopPlacesModal" class="modal">
+        <div class="modal-header">
+            <h2>Editar Lugares TOP</h2>
+            <button class="btn-icon" onclick="closeEditTopPlaces()" style="width:32px; height:32px; background:#ECEFF1;">✕</button>
+        </div>
+        <div class="modal-content">
+            <p style="color:var(--text-secondary); margin-bottom:1rem; font-size:0.9rem;">Personaliza tus 10 lugares favoritos. Haz click en cada uno para editarlo.</p>
+            <div id="editTopPlacesList" class="edit-top-places-list"></div>
+        </div>
+    </dialog>
+
+    <dialog id="editSingleTopPlaceModal" class="modal">
+        <div class="modal-header">
+            <h2>Configurar Lugar TOP</h2>
+            <button class="btn-icon" onclick="closeEditSingleTopPlace()" style="width:32px; height:32px; background:#ECEFF1;">✕</button>
+        </div>
+        <div class="modal-content">
+            <div class="form-section">
+                <label for="topPlaceName">Nombre</label>
+                <input type="text" id="topPlaceName" placeholder="Ej: Casa, Trabajo, Gimnasio...">
+            </div>
+
+            <div class="form-section">
+                <label for="topPlaceIcon">Icono (Emoji)</label>
+                <input type="text" id="topPlaceIcon" placeholder="📍" maxlength="2">
+            </div>
+
+            <div class="form-section">
+                <label>Ubicación</label>
+                <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:0.5rem;">Elige de tus lugares visitados o busca uno nuevo:</p>
+
+                <div id="topPlaceVisitedPlaces" style="max-height: 200px; overflow-y: auto; margin-bottom: 1rem;">
+                    <!-- Lugares visitados se cargan aquí -->
+                </div>
+
+                <div style="display: flex; gap:0.5rem; margin-bottom: 1rem;">
+                    <input type="text" id="topPlaceSearch" placeholder="Buscar lugar..." style="margin-bottom:0">
+                    <button id="topPlaceSearchBtn" class="btn-icon" style="background:var(--primary-color); color:white; flex-shrink:0">🔍</button>
+                </div>
+                <div id="topPlaceSearchResults" class="place-results"></div>
+
+                <div id="topPlaceSelectedLocation" style="display:none; padding:0.8rem; background:var(--input-bg); border-radius:12px; margin-top:1rem;">
+                    <div style="font-weight:600; margin-bottom:0.3rem;" id="topPlaceSelectedName"></div>
+                    <div style="font-size:0.85rem; color:var(--text-secondary); font-family:monospace;" id="topPlaceSelectedCoords"></div>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button id="saveSingleTopPlace" class="btn-primary" style="flex:1">Guardar</button>
+                <button id="cancelSingleTopPlace" class="btn-secondary" style="flex:1" onclick="closeEditSingleTopPlace()">Cancelar</button>
+            </div>
+        </div>
+    </dialog>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-heat@0.2.0/dist/leaflet-heat.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/maps.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+    </script>
+</body>
+</html>
