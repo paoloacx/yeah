@@ -250,6 +250,25 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => loader.remove(), 500);
         }
     }, 800);
+
+    // Show welcome toast on first visit
+    setTimeout(() => {
+        const hasSeenWelcome = localStorage.getItem('hasSeenWelcome');
+        if (!hasSeenWelcome) {
+            const welcomeToast = document.createElement('div');
+            welcomeToast.className = 'welcome-toast';
+            welcomeToast.innerHTML = '👈 Desliza las cards hacia un lado para navegar 👉';
+            document.body.appendChild(welcomeToast);
+
+            setTimeout(() => {
+                welcomeToast.style.opacity = '0';
+                welcomeToast.style.transform = 'translateX(-50%) translateY(100%)';
+                setTimeout(() => welcomeToast.remove(), 500);
+            }, 4000);
+
+            localStorage.setItem('hasSeenWelcome', 'true');
+        }
+    }, 1500);
 });
 
 // --- Topographic Background ---
@@ -700,6 +719,23 @@ window.showDetails = (id) => {
 
 window.closeDetails = () => document.getElementById('detailsModal').close();
 
+window.openLastCheckinForPlace = (placeKey) => {
+    const checkins = Storage.getAllCheckins();
+    // Buscar el último checkin que coincida con este lugar
+    const matchingCheckin = checkins.reverse().find(c => {
+        if (c.placeName) {
+            return c.placeName === placeKey;
+        } else {
+            const coords = `${c.location.lat.toFixed(3)},${c.location.lng.toFixed(3)}`;
+            return coords === placeKey;
+        }
+    });
+
+    if (matchingCheckin) {
+        showDetails(matchingCheckin.id);
+    }
+};
+
 // --- Stats ---
 function loadStats() {
     const checkins = Storage.getAllCheckins();
@@ -720,7 +756,9 @@ function loadStats() {
             displayName = `${c.location.lat.toFixed(4)}, ${c.location.lng.toFixed(4)}`;
         }
         if (!placeData[key]) {
-            placeData[key] = { count: 0, displayName: displayName };
+            placeData[key] = { count: 0, displayName: displayName, lastCheckin: c };
+        } else {
+            placeData[key].lastCheckin = c; // Actualizar con el más reciente
         }
         placeData[key].count++;
     });
@@ -730,7 +768,10 @@ function loadStats() {
         .slice(0, 5);
 
     document.getElementById('topPlaces').innerHTML = sortedPlaces.length ? sortedPlaces.map(([key, data]) =>
-        `<div class="top-item"><span>📍 ${data.displayName}</span><span class="place-count">${data.count}</span></div>`).join('') : '<p style="opacity:0.6;text-align:center">Sin datos</p>';
+        `<div class="top-item clickable-place" onclick="openLastCheckinForPlace('${key.replace(/'/g, "\\'")}')">
+            <span>📍 ${data.displayName}</span>
+            <span class="place-count-badge">${data.count}</span>
+        </div>`).join('') : '<p style="opacity:0.6;text-align:center">Sin datos</p>';
 
     loadChart(checkins, 'monthlyChart', c => new Date(c.timestamp).toISOString().slice(0,7), (k) => {
         const [y, m] = k.split('-'); return new Date(y, m-1).toLocaleDateString('es-ES',{month:'short'});

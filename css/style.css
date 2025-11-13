@@ -193,6 +193,7 @@ body {
 .card-header {
     padding: 1.5rem; display: flex; justify-content: space-between; align-items: center;
     background: linear-gradient(to bottom, var(--header-bg-start), var(--header-bg-end));
+    border: 2px solid rgba(0, 0, 0, 0.2);
     border-bottom: 1px solid rgba(0,0,0,0.06);
     border-radius: var(--radius-card) var(--radius-card) var(--radius-card) var(--radius-card);
     z-index: 2; position: relative; overflow: hidden;
@@ -341,6 +342,29 @@ input:focus, textarea:focus, select:focus {
 .bar-container { flex: 1; height: 10px; background: #ECEFF1; border-radius: 5px; overflow: hidden; }
 .bar-fill { height: 100%; background: var(--primary-color); border-radius: 5px; }
 .top-item { display: flex; justify-content: space-between; padding: 0.8rem 0; border-bottom: 1px dashed #ECEFF1; }
+.top-item.clickable-place {
+    cursor: pointer;
+    transition: background 0.2s;
+    padding: 0.8rem;
+    margin: 0 -0.5rem;
+    border-radius: 12px;
+}
+.top-item.clickable-place:active {
+    background: var(--input-bg);
+}
+.place-count-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 32px;
+    background: var(--primary-color);
+    color: white;
+    font-weight: 700;
+    font-size: 0.95rem;
+    border-radius: 50%;
+    padding: 0 8px;
+}
 
 /* TOASTS */
 #toast-container {
@@ -356,6 +380,33 @@ input:focus, textarea:focus, select:focus {
     animation: toastSlide 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 @keyframes toastSlide { from { opacity:0; transform: translateY(-100%); } to { opacity:1; transform: translateY(0); } }
+
+/* WELCOME TOAST */
+.welcome-toast {
+    position: fixed;
+    bottom: 3rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    background: rgba(76, 175, 80, 0.95);
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 24px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-align: center;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+    animation: welcomeSlide 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    max-width: 85%;
+    line-height: 1.4;
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+@keyframes welcomeSlide {
+    from { opacity: 0; transform: translateX(-50%) translateY(100%); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
 
 /* MODAL */
 .modal {
