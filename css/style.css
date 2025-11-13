@@ -26,6 +26,12 @@ body.dark-mode {
     --input-border: rgba(255,255,255,0.1);
 }
 
+body.dark-mode .btn-secondary {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    color: white;
+    border: 2px solid var(--primary-dark);
+}
+
 @media (prefers-color-scheme: dark) {
     :root {
         --text-primary: #E0E0E0;

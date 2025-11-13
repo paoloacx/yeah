@@ -216,7 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Dark mode toggle
     const darkModeToggle = document.getElementById('darkModeToggle');
     const savedTheme = localStorage.getItem('theme');
-    
+
     if (savedTheme === 'dark') {
         document.body.classList.add('dark-mode');
         darkModeToggle.checked = true;
@@ -226,10 +226,11 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
         // Auto detect system preference
         if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.body.classList.add('dark-mode');
             darkModeToggle.checked = true;
         }
     }
-    
+
     darkModeToggle.addEventListener('change', (e) => {
         if (e.target.checked) {
             document.body.classList.add('dark-mode');
