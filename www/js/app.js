@@ -107,6 +107,10 @@ let currentPlaceName = null;
 let hasUnsavedChanges = false;
 
 document.addEventListener('DOMContentLoaded', async () => {
+    console.log('========================================');
+    console.log('YEAH APP VERSION 2.0 - LOADED SUCCESSFULLY');
+    console.log('========================================');
+
     CardStack.init();
     initTopoBackground();
 
@@ -232,31 +236,44 @@ document.addEventListener('DOMContentLoaded', async () => {
     const darkModeToggle = document.getElementById('darkModeToggle');
     const savedTheme = localStorage.getItem('theme');
 
+    console.log('Dark mode init - savedTheme:', savedTheme);
+    console.log('System prefers dark:', window.matchMedia('(prefers-color-scheme: dark)').matches);
+
     if (savedTheme === 'dark') {
         document.body.classList.add('dark-mode');
         darkModeToggle.checked = true;
+        console.log('Applied saved DARK theme');
     } else if (savedTheme === 'light') {
         document.body.classList.remove('dark-mode');
         darkModeToggle.checked = false;
+        console.log('Applied saved LIGHT theme');
     } else {
         // Auto detect system preference and save it
         if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
             document.body.classList.add('dark-mode');
             darkModeToggle.checked = true;
             localStorage.setItem('theme', 'dark');
+            console.log('Auto-detected DARK, saved to localStorage');
         } else {
+            document.body.classList.remove('dark-mode');
+            darkModeToggle.checked = false;
             localStorage.setItem('theme', 'light');
+            console.log('Auto-detected LIGHT, saved to localStorage');
         }
     }
 
     darkModeToggle.addEventListener('change', (e) => {
+        console.log('Toggle changed! Checked:', e.target.checked);
         if (e.target.checked) {
             document.body.classList.add('dark-mode');
             localStorage.setItem('theme', 'dark');
+            console.log('Switched to DARK mode');
         } else {
             document.body.classList.remove('dark-mode');
             localStorage.setItem('theme', 'light');
+            console.log('Switched to LIGHT mode');
         }
+        console.log('Body classes:', document.body.className);
         if ('vibrate' in navigator) navigator.vibrate(30);
     });
     
