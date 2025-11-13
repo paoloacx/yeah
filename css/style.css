@@ -178,10 +178,16 @@ body {
 
 /* Posiciones desordenadas */
 .card[data-position="0"] { z-index: 10; transform: translateX(0) translateY(0px) scale(1) rotate(0deg); opacity: 1; }
-.card[data-position="1"] { z-index: 9; transform: translateX(10px) translateY(25px) scale(0.94) rotate(1.5deg); opacity: 0.6; pointer-events: none; filter: brightness(0.95); }
-.card[data-position="2"] { z-index: 8; transform: translateX(-10px) translateY(50px) scale(0.88) rotate(-1.5deg); opacity: 0.3; pointer-events: none; filter: brightness(0.9); }
+.card[data-position="1"] { z-index: 9; transform: translateX(15px) translateY(55px) scale(0.94) rotate(1.5deg); opacity: 0.6; pointer-events: none; filter: brightness(0.95); }
+.card[data-position="2"] { z-index: 8; transform: translateX(-15px) translateY(110px) scale(0.88) rotate(-1.5deg); opacity: 0.3; pointer-events: none; filter: brightness(0.9); }
 .card[data-position^="-"], .card[data-position="3"], .card[data-position="4"] { opacity: 0; pointer-events: none; }
 .card.dragging { transition: none !important; }
+
+/* Desktop fan-out effect */
+@media (min-width: 768px) {
+    .card[data-position="1"] { transform: translateX(50px) translateY(55px) scale(0.94) rotate(2deg); }
+    .card[data-position="2"] { transform: translateX(-50px) translateY(110px) scale(0.88) rotate(-2deg); }
+}
 
 /* HEADER con ruido */
 .card-header {
@@ -190,6 +196,7 @@ body {
     border-bottom: 1px solid rgba(0,0,0,0.06);
     border-radius: var(--radius-card) var(--radius-card) var(--radius-card) var(--radius-card);
     z-index: 2; position: relative; overflow: hidden;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 .card-header::before {
     content: ""; position: absolute; inset: 0; opacity: 0.25; pointer-events: none;
