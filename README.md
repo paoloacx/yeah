@@ -19,8 +19,14 @@ La aplicación web está en la carpeta raíz. Puedes abrir `index.html` directam
 # Instalar dependencias
 npm install
 
+# Añadir plataforma Android
+npx cap add android
+
+# Configurar widgets (ejecutar este script después de añadir Android)
+./setup-widgets.sh
+
 # Sincronizar código web con Android
-npm run capacitor:sync
+npx cap sync android
 ```
 
 ### Build y ejecución en Android
