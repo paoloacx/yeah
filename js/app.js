@@ -579,13 +579,13 @@ document.getElementById('exportICal').onclick = () => {
     data.forEach(c => {
         const d = new Date(c.timestamp).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
 
-        // Nombre del evento: placeName o coordenadas, seguido de " - Yeah¡"
+        // Nombre del evento: "Estoy en" + placeName o coordenadas, seguido de " - Yeah¡"
         const eventName = c.placeName
-            ? `${c.placeName} - Yeah¡`
-            : `${c.location.lat.toFixed(4)}, ${c.location.lng.toFixed(4)} - Yeah¡`;
+            ? `Estoy en ${c.placeName} - Yeah¡`
+            : `Estoy en ${c.location.lat.toFixed(4)}, ${c.location.lng.toFixed(4)} - Yeah¡`;
 
-        // Ubicación: URL de coordenadas para calendarios
-        const locationUrl = `geo:${c.location.lat},${c.location.lng}`;
+        // Ubicación: nombre del lugar o coordenadas en texto
+        const locationText = c.placeName || `${c.location.lat.toFixed(4)}, ${c.location.lng.toFixed(4)}`;
 
         // Descripción: notas si existen
         const description = c.note || '';
@@ -593,7 +593,7 @@ document.getElementById('exportICal').onclick = () => {
         ics += "BEGIN:VEVENT\n" +
                `UID:${c.id}@yeah.app\nDTSTAMP:${d}\nDTSTART:${d}\n` +
                `SUMMARY:${eventName}\n` +
-               `LOCATION:${locationUrl}\n` +
+               `LOCATION:${locationText}\n` +
                `DESCRIPTION:${description}\n` +
                `GEO:${c.location.lat};${c.location.lng}\nEND:VEVENT\n`;
     });

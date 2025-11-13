@@ -1,4 +1,4 @@
-const CACHE_NAME = 'yeah-v12';
+const CACHE_NAME = 'yeah-v13';
 const TILES_CACHE = 'yeah-tiles-v1';
 const urlsToCache = [
   './',
