@@ -193,8 +193,8 @@ body {
 .card-header {
     padding: 1.5rem; display: flex; justify-content: space-between; align-items: center;
     background: linear-gradient(to bottom, var(--header-bg-start), var(--header-bg-end));
-    border: 2px solid rgba(0, 0, 0, 0.2);
-    border-bottom: 1px solid rgba(0,0,0,0.06);
+    border: 2px solid rgba(76, 175, 80, 0.40);
+    border-bottom: 1px solid rgba(76, 175, 80, 0.40);
     border-radius: var(--radius-card) var(--radius-card) var(--radius-card) var(--radius-card);
     z-index: 2; position: relative; overflow: hidden;
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1);
