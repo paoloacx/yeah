@@ -317,7 +317,8 @@
     <script src="js/widgets.js"></script>
     <script src="js/app.js"></script>
     <script>
-        if ('serviceWorker' in navigator) {
+        // Only register service worker on web, not on Capacitor
+        if ('serviceWorker' in navigator && !window.Capacitor) {
             navigator.serviceWorker.register('sw.js');
         }
     </script>
