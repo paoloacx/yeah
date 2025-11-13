@@ -77,3 +77,26 @@ La app requiere los siguientes permisos:
 - `@capacitor/preferences` - Almacenamiento persistente
 - `@capacitor/splash-screen` - Pantalla de carga
 - `@capacitor/status-bar` - Control de la barra de estado
+
+## Widgets de Android
+
+La app incluye 3 widgets para la pantalla de inicio:
+
+### 1. Check-in rápido (1x1)
+- Botón que abre la app directamente en la card de nuevo check-in
+- Ideal para hacer check-ins rápidos sin navegar por la app
+
+### 2. Mapa miniatura (2x2)
+- Muestra una vista previa del mapa con tus lugares
+- Contador de check-ins totales
+- Al pulsar, abre la app en la pantalla principal
+
+### 3. Top 3 lugares (2x1)
+- Lista de tus 3 lugares más visitados con contadores
+- Se actualiza automáticamente cada 30 minutos
+- Al pulsar cualquier lugar, abre la app
+
+Los widgets se actualizan automáticamente cuando:
+- Guardas un nuevo check-in
+- Eliminas un check-in
+- Modificas tus lugares favoritos
