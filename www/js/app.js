@@ -106,9 +106,24 @@ let currentPhoto = null;
 let currentPlaceName = null;
 let hasUnsavedChanges = false;
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     CardStack.init();
     initTopoBackground();
+
+    // Request permissions on mobile
+    if (window.Capacitor && window.Capacitor.getPlatform() !== 'web') {
+        setTimeout(async () => {
+            try {
+                // Request location permission
+                if (window.Capacitor.Plugins && window.Capacitor.Plugins.Geolocation) {
+                    const permission = await window.Capacitor.Plugins.Geolocation.requestPermissions();
+                    console.log('Location permission:', permission);
+                }
+            } catch (error) {
+                console.log('Error requesting permissions:', error);
+            }
+        }, 1000);
+    }
 
     // New Yeah button
     document.getElementById('newYeahBtn').addEventListener('click', () => {
@@ -224,10 +239,13 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.classList.remove('dark-mode');
         darkModeToggle.checked = false;
     } else {
-        // Auto detect system preference
+        // Auto detect system preference and save it
         if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
             document.body.classList.add('dark-mode');
             darkModeToggle.checked = true;
+            localStorage.setItem('theme', 'dark');
+        } else {
+            localStorage.setItem('theme', 'light');
         }
     }
 
