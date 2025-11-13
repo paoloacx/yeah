@@ -178,8 +178,8 @@ body {
 
 /* Posiciones desordenadas */
 .card[data-position="0"] { z-index: 10; transform: translateX(0) translateY(0px) scale(1) rotate(0deg); opacity: 1; }
-.card[data-position="1"] { z-index: 9; transform: translateX(40px) translateY(30px) scale(0.94) rotate(1.5deg); opacity: 0.6; pointer-events: none; filter: brightness(0.95); }
-.card[data-position="2"] { z-index: 8; transform: translateX(-40px) translateY(60px) scale(0.88) rotate(-1.5deg); opacity: 0.3; pointer-events: none; filter: brightness(0.9); }
+.card[data-position="1"] { z-index: 9; transform: translateX(30px) translateY(20px) scale(0.94) rotate(5deg); opacity: 0.6; pointer-events: none; filter: brightness(0.95); }
+.card[data-position="2"] { z-index: 8; transform: translateX(-30px) translateY(30px) scale(0.88) rotate(-5deg); opacity: 0.3; pointer-events: none; filter: brightness(0.9); }
 .card[data-position^="-"], .card[data-position="3"], .card[data-position="4"] { opacity: 0; pointer-events: none; }
 .card.dragging { transition: none !important; }
 
