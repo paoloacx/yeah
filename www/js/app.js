@@ -172,8 +172,8 @@ const CardStack = {
             updateQuickStats();
         }
         if (type === 'checkin' && !window.editingId) {
-            // Delay to ensure map container has dimensions
-            setTimeout(() => resetCheckin(), 300);
+            // Delay to ensure map container has dimensions (card transition is 600ms)
+            setTimeout(() => resetCheckin(), 700);
         }
         if (type === 'history') loadHistory();
         if (type === 'stats') loadStats();
@@ -545,6 +545,23 @@ function resetCheckin() {
 
 function initCheckinMap(lat, lng) {
     console.log('initCheckinMap: creating map at', lat, lng);
+
+    // Verify container has dimensions
+    const container = document.getElementById('mapPreview');
+    if (container) {
+        const rect = container.getBoundingClientRect();
+        console.log('initCheckinMap: container dimensions:', rect.width, 'x', rect.height);
+        if (rect.width === 0 || rect.height === 0) {
+            console.error('initCheckinMap: container has no dimensions!');
+            showToast('Error: contenedor del mapa sin dimensiones', 'error');
+            return;
+        }
+    } else {
+        console.error('initCheckinMap: container not found!');
+        showToast('Error: contenedor del mapa no encontrado', 'error');
+        return;
+    }
+
     checkinMap = Maps.createMap('mapPreview', lat, lng, 16);
 
     checkinMap.on('click', e => {
@@ -635,7 +652,15 @@ function updateLoc(lat, lng) {
 // --- Search ---
 document.getElementById('searchBtn').onclick = () => {
     const query = document.getElementById('placeSearch').value.trim();
-    if (!query || !currentPos) return;
+    console.log('searchBtn clicked: query=', query, 'currentPos=', currentPos);
+    if (!query) {
+        showToast('Escribe algo para buscar', 'error');
+        return;
+    }
+    if (!currentPos) {
+        showToast('Esperando ubicación...', 'error');
+        return;
+    }
     showToast('Buscando lugares...');
     if (window.Maps && window.Maps.searchNearby) {
         window.Maps.searchNearby(currentPos.lat, currentPos.lng, query)
