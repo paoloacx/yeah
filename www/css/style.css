@@ -220,7 +220,7 @@ body {
 
 /* HEADER con ruido */
 .card-header {
-    padding: 0.75rem 1.5rem;
+    padding: 0.5rem 1.5rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -237,10 +237,10 @@ body {
     mix-blend-mode: multiply;
 }
 .card-header h1 { font-size: 1.75rem; font-weight: 800; color: #4caf50; letter-spacing: -0.5px; z-index: 1; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); }
-.logo-header { height: 60px; width: auto; z-index: 1; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2)); }
+.logo-header { height: 65px; width: auto; z-index: 1; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2)); }
 .checkin-header-wrapper { display: flex; align-items: center; gap: 0.5rem; z-index: 1; }
 .checkin-header-wrapper h1 { margin: 0; font-size: 1.75rem; font-weight: 800; color: #4caf50; letter-spacing: -0.5px; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); }
-.checkin-header-wrapper .logo-header { height: 55px; }
+.checkin-header-wrapper .logo-header { height: 65px; }
 .card-indicator { display: flex; gap: 6px; z-index: 1; }
 .dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(0,0,0,0.2); transition: all 0.4s ease; }
 .dot.active { background: var(--primary-color); transform: scale(1.5); }
