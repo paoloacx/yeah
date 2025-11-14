@@ -504,23 +504,74 @@ function resetCheckin() {
         watchId = null;
     }
 
-    // Get initial position first
-    console.log('resetCheckin: getting initial position');
+    // Create map IMMEDIATELY with default location (Madrid)
+    // This ensures the map always exists
+    console.log('resetCheckin: creating map with default location');
+    currentPos = {lat: 40.4168, lng: -3.7038};
+    if (!checkinMap) {
+        console.log('resetCheckin: initializing new map');
+        initCheckinMap(currentPos.lat, currentPos.lng);
+    } else {
+        console.log('resetCheckin: map already exists, updating view');
+        checkinMap.setView([currentPos.lat, currentPos.lng], 16);
+        if (marker) marker.remove();
+        marker = Maps.addMarker(checkinMap, currentPos.lat, currentPos.lng);
+    }
+
+    // NOW try to get real position
+    console.log('resetCheckin: requesting geolocation');
+    showToast('Obteniendo ubicación...', 'normal');
+
     Geolocation.getCurrentPosition(
         p => {
-            console.log('resetCheckin: got position', p);
+            console.log('resetCheckin: got real position', p);
+            showToast('Ubicación obtenida', 'success');
             updateLoc(p.coords.latitude, p.coords.longitude);
-            // Then start watching
             startWatchingPosition();
         },
         e => {
-            console.error('resetCheckin: error getting position', e);
-            showToast('No se puede obtener ubicación', 'error');
-            // Try with default location (Madrid)
-            updateLoc(40.4168, -3.7038);
+            console.error('resetCheckin: geolocation error', e);
+            showToast('Usando ubicación por defecto', 'error');
+            // Map already created with default location, nothing else to do
         },
         {enableHighAccuracy: true, timeout: 10000, maximumAge: 0}
     );
+}
+
+function initCheckinMap(lat, lng) {
+    console.log('initCheckinMap: creating map at', lat, lng);
+    checkinMap = Maps.createMap('mapPreview', lat, lng, 16);
+
+    checkinMap.on('click', e => {
+        if (watchId) Geolocation.clearWatch(watchId);
+        watchId = null;
+        updateLoc(e.latlng.lat, e.latlng.lng);
+        showToast('Ubicación fijada manualmente');
+        if ('vibrate' in navigator) navigator.vibrate(50);
+    });
+
+    // Center preview button
+    document.getElementById('centerPreviewBtn').onclick = () => {
+        const btn = document.getElementById('centerPreviewBtn');
+        btn.classList.add('loading');
+        Geolocation.getCurrentPosition(
+            p => {
+                if (watchId) Geolocation.clearWatch(watchId);
+                watchId = null;
+                updateLoc(p.coords.latitude, p.coords.longitude);
+                btn.classList.remove('loading');
+                if ('vibrate' in navigator) navigator.vibrate(50);
+            },
+            () => {
+                btn.classList.remove('loading');
+                showToast('No se pudo obtener ubicación', 'error');
+            },
+            {enableHighAccuracy: true}
+        );
+    };
+
+    marker = Maps.addMarker(checkinMap, lat, lng);
+    console.log('initCheckinMap: map created successfully');
 }
 
 function startWatchingPosition() {
