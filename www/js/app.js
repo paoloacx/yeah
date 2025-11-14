@@ -171,7 +171,10 @@ const CardStack = {
             window.mainMap ? setTimeout(() => window.mainMap.invalidateSize(), 200) : initMainMap();
             updateQuickStats();
         }
-        if (type === 'checkin' && !window.editingId) resetCheckin();
+        if (type === 'checkin' && !window.editingId) {
+            // Delay to ensure map container has dimensions
+            setTimeout(() => resetCheckin(), 300);
+        }
         if (type === 'history') loadHistory();
         if (type === 'stats') loadStats();
     }
@@ -513,6 +516,8 @@ function resetCheckin() {
         initCheckinMap(currentPos.lat, currentPos.lng);
     } else {
         console.log('resetCheckin: map already exists, updating view');
+        // Recalculate map dimensions in case container size changed
+        setTimeout(() => checkinMap.invalidateSize(), 100);
         checkinMap.setView([currentPos.lat, currentPos.lng], 16);
         if (marker) marker.remove();
         marker = Maps.addMarker(checkinMap, currentPos.lat, currentPos.lng);
