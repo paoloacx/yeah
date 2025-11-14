@@ -384,6 +384,30 @@ document.addEventListener('DOMContentLoaded', async () => {
             localStorage.setItem('hasSeenWelcome', 'true');
         }
     }, 1500);
+
+    // Search button
+    document.getElementById('searchBtn').addEventListener('click', () => {
+        const query = document.getElementById('placeSearch').value.trim();
+        console.log('searchBtn clicked: query=', query, 'currentPos=', currentPos);
+        if (!query) {
+            showToast('Escribe algo para buscar', 'error');
+            return;
+        }
+        if (!currentPos) {
+            showToast('Esperando ubicación...', 'error');
+            return;
+        }
+        showToast('Buscando lugares...');
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&lat=${currentPos.lat}&lon=${currentPos.lng}`)
+            .then(r => r.json())
+            .then(results => {
+                const container = document.getElementById('placeResults');
+                container.innerHTML = results.map(r =>
+                    `<div class="place-item" onclick="selectPlace('${r.display_name.replace(/'/g, "\\'")}', ${r.lat}, ${r.lon})">${r.display_name}</div>`
+                ).join('');
+            })
+            .catch(() => showToast('Error al buscar', 'error'));
+    });
 });
 
 // --- Topographic Background ---
@@ -546,23 +570,34 @@ function resetCheckin() {
 function initCheckinMap(lat, lng) {
     console.log('initCheckinMap: creating map at', lat, lng);
 
-    // Verify container has dimensions
+    // Verify container exists
     const container = document.getElementById('mapPreview');
-    if (container) {
-        const rect = container.getBoundingClientRect();
-        console.log('initCheckinMap: container dimensions:', rect.width, 'x', rect.height);
-        if (rect.width === 0 || rect.height === 0) {
-            console.error('initCheckinMap: container has no dimensions!');
-            showToast('Error: contenedor del mapa sin dimensiones', 'error');
-            return;
-        }
-    } else {
+    if (!container) {
         console.error('initCheckinMap: container not found!');
-        showToast('Error: contenedor del mapa no encontrado', 'error');
+        // Retry after a delay
+        setTimeout(() => {
+            console.log('initCheckinMap: retrying after 500ms...');
+            initCheckinMap(lat, lng);
+        }, 500);
         return;
     }
 
+    const rect = container.getBoundingClientRect();
+    console.log('initCheckinMap: container dimensions:', rect.width, 'x', rect.height);
+
+    // Create map even if dimensions are zero - Leaflet can handle it
     checkinMap = Maps.createMap('mapPreview', lat, lng, 16);
+
+    // If dimensions were zero, fix size after a delay
+    if (rect.width === 0 || rect.height === 0) {
+        console.warn('initCheckinMap: container had zero dimensions, will invalidate size');
+        setTimeout(() => {
+            if (checkinMap) {
+                console.log('initCheckinMap: invalidating size after delay');
+                checkinMap.invalidateSize();
+            }
+        }, 300);
+    }
 
     checkinMap.on('click', e => {
         if (watchId) Geolocation.clearWatch(watchId);
@@ -648,41 +683,6 @@ function updateLoc(lat, lng) {
     if (marker) marker.remove();
     marker = Maps.addMarker(checkinMap, lat, lng);
 }
-
-// --- Search ---
-document.getElementById('searchBtn').onclick = () => {
-    const query = document.getElementById('placeSearch').value.trim();
-    console.log('searchBtn clicked: query=', query, 'currentPos=', currentPos);
-    if (!query) {
-        showToast('Escribe algo para buscar', 'error');
-        return;
-    }
-    if (!currentPos) {
-        showToast('Esperando ubicación...', 'error');
-        return;
-    }
-    showToast('Buscando lugares...');
-    if (window.Maps && window.Maps.searchNearby) {
-        window.Maps.searchNearby(currentPos.lat, currentPos.lng, query)
-            .then(results => {
-                 const container = document.getElementById('placeResults');
-                 container.innerHTML = results.map(r => 
-                     `<div class="place-item" onclick="selectPlace('${r.display_name.replace(/'/g, "\\'")}', ${r.lat}, ${r.lon})">${r.display_name}</div>`
-                 ).join('');
-            })
-            .catch(() => showToast('Error en la búsqueda', 'error'));
-    } else {
-        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&lat=${currentPos.lat}&lon=${currentPos.lng}`)
-            .then(r => r.json())
-            .then(results => {
-                const container = document.getElementById('placeResults');
-                 container.innerHTML = results.map(r => 
-                     `<div class="place-item" onclick="selectPlace('${r.display_name.replace(/'/g, "\\'")}', ${r.lat}, ${r.lon})">${r.display_name}</div>`
-                 ).join('');
-            })
-            .catch(() => showToast('Error al buscar', 'error'));
-    }
-};
 
 window.selectPlace = (name, lat, lng) => {
     currentPlaceName = name;
