@@ -22,7 +22,9 @@ const Geolocation = {
     async getCurrentPosition(successCallback, errorCallback, options) {
         if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Geolocation) {
             try {
+                console.log('Using Capacitor Geolocation getCurrentPosition');
                 const position = await window.Capacitor.Plugins.Geolocation.getCurrentPosition(options);
+                console.log('Capacitor position received:', position);
                 successCallback({
                     coords: {
                         latitude: position.coords.latitude,
@@ -36,11 +38,14 @@ const Geolocation = {
                     timestamp: position.timestamp
                 });
             } catch (error) {
+                console.error('Capacitor getCurrentPosition error:', error);
                 if (errorCallback) errorCallback(error);
             }
         } else if (navigator.geolocation) {
-            Geolocation.getCurrentPosition(successCallback, errorCallback, options);
+            console.log('Using navigator.geolocation getCurrentPosition');
+            navigator.geolocation.getCurrentPosition(successCallback, errorCallback, options);
         } else {
+            console.error('Geolocation not available');
             if (errorCallback) errorCallback(new Error('Geolocation not available'));
         }
     },
