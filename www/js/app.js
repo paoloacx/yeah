@@ -477,7 +477,7 @@ function resetCheckin() {
     currentPhoto = null;
     currentPlaceName = null;
     hasUnsavedChanges = false;
-    document.getElementById('cardTitleCheckin').textContent = 'Nuevo yeah¡';
+    // Title is static in HTML, no need to change it
     document.getElementById('saveCheckin').textContent = 'Guardar yeah¡';
     document.getElementById('placeNote').value = '';
     document.getElementById('photoInput').value = '';
