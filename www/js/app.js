@@ -477,8 +477,8 @@ function resetCheckin() {
     currentPhoto = null;
     currentPlaceName = null;
     hasUnsavedChanges = false;
-    document.getElementById('cardTitleCheckin').textContent = 'Nuevo Yeah¡';
-    document.getElementById('saveCheckin').textContent = 'Guardar Yeah¡';
+    document.getElementById('cardTitleCheckin').textContent = 'Nuevo yeah¡';
+    document.getElementById('saveCheckin').textContent = 'Guardar yeah¡';
     document.getElementById('placeNote').value = '';
     document.getElementById('photoInput').value = '';
     document.getElementById('photoPreview').style.display = 'none';
@@ -638,7 +638,7 @@ document.getElementById('saveCheckin').onclick = () => {
     
     if ('vibrate' in navigator) navigator.vibrate([50, 100, 50]);
     
-    showToast(editingId ? '¡Yeah actualizado!' : '¡Yeah¡ guardado!', 'success');
+    showToast(editingId ? '¡yeah actualizado!' : '¡yeah¡ guardado!', 'success');
     hasUnsavedChanges = false;
     resetCheckin();
     CardStack.currentIndex = 0; CardStack.updatePositions();
@@ -649,8 +649,8 @@ document.getElementById('saveCheckin').onclick = () => {
 window.editCheckin = (id) => {
     const c = Storage.getCheckin(id); if (!c) return;
     editingId = id; currentPos = c.location; currentPhoto = c.photo || null; currentPlaceName = c.placeName || null;
-    document.getElementById('cardTitleCheckin').textContent = 'Editando Yeah¡';
-    document.getElementById('saveCheckin').textContent = 'Actualizar Yeah¡';
+    document.getElementById('cardTitleCheckin').textContent = 'Editando yeah¡';
+    document.getElementById('saveCheckin').textContent = 'Actualizar yeah¡';
     document.getElementById('placeNote').value = c.note || '';
 
     // Show place name if exists
@@ -717,10 +717,10 @@ document.getElementById('exportICal').onclick = () => {
     data.forEach(c => {
         const d = new Date(c.timestamp).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
 
-        // Nombre del evento: "Estoy en" + placeName o coordenadas, seguido de " - Yeah¡"
+        // Nombre del evento: "Estoy en" + placeName o coordenadas, seguido de " - yeah¡"
         const eventName = c.placeName
-            ? `Estoy en ${c.placeName} - Yeah¡`
-            : `Estoy en ${c.location.lat.toFixed(4)}, ${c.location.lng.toFixed(4)} - Yeah¡`;
+            ? `Estoy en ${c.placeName} - yeah¡`
+            : `Estoy en ${c.location.lat.toFixed(4)}, ${c.location.lng.toFixed(4)} - yeah¡`;
 
         // Ubicación: nombre del lugar o coordenadas en texto
         const locationText = c.placeName || `${c.location.lat.toFixed(4)}, ${c.location.lng.toFixed(4)}`;
