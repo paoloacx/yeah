@@ -493,16 +493,51 @@ function resetCheckin() {
     document.getElementById('toggleDetailsBtn').classList.remove('active');
 
     document.getElementById('dateTimeSection').style.display = 'none';
-    
+
     const now = new Date();
     document.getElementById('checkinDate').value = now.toISOString().split('T')[0];
     document.getElementById('checkinTime').value = now.toTimeString().slice(0, 5);
-    
-    if (watchId) Geolocation.clearWatch(watchId);
+
+    // Clear any existing watch
+    if (watchId) {
+        Geolocation.clearWatch(watchId);
+        watchId = null;
+    }
+
+    // Get initial position first
+    console.log('resetCheckin: getting initial position');
+    Geolocation.getCurrentPosition(
+        p => {
+            console.log('resetCheckin: got position', p);
+            updateLoc(p.coords.latitude, p.coords.longitude);
+            // Then start watching
+            startWatchingPosition();
+        },
+        e => {
+            console.error('resetCheckin: error getting position', e);
+            showToast('No se puede obtener ubicación', 'error');
+            // Try with default location (Madrid)
+            updateLoc(40.4168, -3.7038);
+        },
+        {enableHighAccuracy: true, timeout: 10000, maximumAge: 0}
+    );
+}
+
+function startWatchingPosition() {
+    console.log('startWatchingPosition: starting watch');
     Geolocation.watchPosition(
-        p => updateLoc(p.coords.latitude, p.coords.longitude),
-        e => showToast('Buscando señal GPS...', 'error'), {enableHighAccuracy:true}
-    ).then(id => { watchId = id; });
+        p => {
+            console.log('watchPosition: got update', p);
+            updateLoc(p.coords.latitude, p.coords.longitude);
+        },
+        e => console.error('watchPosition: error', e),
+        {enableHighAccuracy: true}
+    ).then(id => {
+        watchId = id;
+        console.log('watchPosition: got watchId', id);
+    }).catch(err => {
+        console.error('watchPosition: promise error', err);
+    });
 }
 function updateLoc(lat, lng) {
     currentPos = {lat, lng};
