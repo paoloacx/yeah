@@ -314,7 +314,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Dark mode toggle
     const darkModeToggle = document.getElementById('darkModeToggle');
+    const themeLabel = document.getElementById('themeLabel');
     const savedTheme = localStorage.getItem('theme');
+
+    function updateThemeLabel(isDark) {
+        if (themeLabel) {
+            themeLabel.textContent = isDark ? 'Modo Claro' : 'Modo Oscuro';
+        }
+    }
 
     console.log('Dark mode init - savedTheme:', savedTheme);
     console.log('System prefers dark:', window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -322,21 +329,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (savedTheme === 'dark') {
         document.body.classList.add('dark-mode');
         darkModeToggle.checked = true;
+        updateThemeLabel(true);
         console.log('Applied saved DARK theme');
     } else if (savedTheme === 'light') {
         document.body.classList.remove('dark-mode');
         darkModeToggle.checked = false;
+        updateThemeLabel(false);
         console.log('Applied saved LIGHT theme');
     } else {
         // Auto detect system preference and save it
         if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
             document.body.classList.add('dark-mode');
             darkModeToggle.checked = true;
+            updateThemeLabel(true);
             localStorage.setItem('theme', 'dark');
             console.log('Auto-detected DARK, saved to localStorage');
         } else {
             document.body.classList.remove('dark-mode');
             darkModeToggle.checked = false;
+            updateThemeLabel(false);
             localStorage.setItem('theme', 'light');
             console.log('Auto-detected LIGHT, saved to localStorage');
         }
@@ -347,10 +358,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (e.target.checked) {
             document.body.classList.add('dark-mode');
             localStorage.setItem('theme', 'dark');
+            updateThemeLabel(true);
             console.log('Switched to DARK mode');
         } else {
             document.body.classList.remove('dark-mode');
             localStorage.setItem('theme', 'light');
+            updateThemeLabel(false);
             console.log('Switched to LIGHT mode');
         }
         console.log('Body classes:', document.body.className);
@@ -549,18 +562,15 @@ function resetCheckin() {
 
     // NOW try to get real position
     console.log('resetCheckin: requesting geolocation');
-    showToast('Obteniendo ubicación...', 'normal');
 
     Geolocation.getCurrentPosition(
         p => {
             console.log('resetCheckin: got real position', p);
-            showToast('Ubicación obtenida', 'success');
             updateLoc(p.coords.latitude, p.coords.longitude);
-            startWatchingPosition();
+            // Don't auto-start watching - let user control it
         },
         e => {
             console.error('resetCheckin: geolocation error', e);
-            showToast('Usando ubicación por defecto', 'error');
             // Map already created with default location, nothing else to do
         },
         {enableHighAccuracy: true, timeout: 10000, maximumAge: 0}
