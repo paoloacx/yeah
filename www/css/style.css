@@ -220,7 +220,7 @@ body {
 
 /* HEADER con ruido */
 .card-header {
-    padding: 0 0.75rem;
+    padding: 0.25rem 0.75rem;
     height: 86px;
     display: flex;
     justify-content: space-between;

@@ -45,37 +45,38 @@ const Geolocation = {
         }
     },
 
-    async watchPosition(successCallback, errorCallback, options) {
+    watchPosition(successCallback, errorCallback, options) {
         if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Geolocation) {
-            try {
-                const watchId = await window.Capacitor.Plugins.Geolocation.watchPosition(options, (position, err) => {
-                    if (err) {
-                        if (errorCallback) errorCallback(err);
-                    } else {
-                        successCallback({
-                            coords: {
-                                latitude: position.coords.latitude,
-                                longitude: position.coords.longitude,
-                                accuracy: position.coords.accuracy,
-                                altitude: position.coords.altitude,
-                                altitudeAccuracy: position.coords.altitudeAccuracy,
-                                heading: position.coords.heading,
-                                speed: position.coords.speed
-                            },
-                            timestamp: position.timestamp
-                        });
-                    }
-                });
-                return watchId;
-            } catch (error) {
+            // Capacitor watchPosition returns a promise with the watchId
+            return window.Capacitor.Plugins.Geolocation.watchPosition(options, (position, err) => {
+                if (err) {
+                    console.error('Geolocation watchPosition error:', err);
+                    if (errorCallback) errorCallback(err);
+                } else {
+                    console.log('Geolocation position received:', position);
+                    successCallback({
+                        coords: {
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude,
+                            accuracy: position.coords.accuracy,
+                            altitude: position.coords.altitude,
+                            altitudeAccuracy: position.coords.altitudeAccuracy,
+                            heading: position.coords.heading,
+                            speed: position.coords.speed
+                        },
+                        timestamp: position.timestamp
+                    });
+                }
+            }).catch(error => {
+                console.error('Geolocation watchPosition catch:', error);
                 if (errorCallback) errorCallback(error);
                 return null;
-            }
+            });
         } else if (navigator.geolocation) {
-            return navigator.geolocation.watchPosition(successCallback, errorCallback, options);
+            return Promise.resolve(navigator.geolocation.watchPosition(successCallback, errorCallback, options));
         } else {
             if (errorCallback) errorCallback(new Error('Geolocation not available'));
-            return null;
+            return Promise.resolve(null);
         }
     },
 
