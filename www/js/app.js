@@ -17,6 +17,77 @@ function showToast(msg, type = 'normal') {
     }, 3000);
 }
 
+// --- Geolocation Wrapper (Capacitor + Web) ---
+const Geolocation = {
+    async getCurrentPosition(successCallback, errorCallback, options) {
+        if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Geolocation) {
+            try {
+                const position = await window.Capacitor.Plugins.Geolocation.getCurrentPosition(options);
+                successCallback({
+                    coords: {
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                        accuracy: position.coords.accuracy,
+                        altitude: position.coords.altitude,
+                        altitudeAccuracy: position.coords.altitudeAccuracy,
+                        heading: position.coords.heading,
+                        speed: position.coords.speed
+                    },
+                    timestamp: position.timestamp
+                });
+            } catch (error) {
+                if (errorCallback) errorCallback(error);
+            }
+        } else if (navigator.geolocation) {
+            Geolocation.getCurrentPosition(successCallback, errorCallback, options);
+        } else {
+            if (errorCallback) errorCallback(new Error('Geolocation not available'));
+        }
+    },
+
+    async watchPosition(successCallback, errorCallback, options) {
+        if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Geolocation) {
+            try {
+                const watchId = await window.Capacitor.Plugins.Geolocation.watchPosition(options, (position, err) => {
+                    if (err) {
+                        if (errorCallback) errorCallback(err);
+                    } else {
+                        successCallback({
+                            coords: {
+                                latitude: position.coords.latitude,
+                                longitude: position.coords.longitude,
+                                accuracy: position.coords.accuracy,
+                                altitude: position.coords.altitude,
+                                altitudeAccuracy: position.coords.altitudeAccuracy,
+                                heading: position.coords.heading,
+                                speed: position.coords.speed
+                            },
+                            timestamp: position.timestamp
+                        });
+                    }
+                });
+                return watchId;
+            } catch (error) {
+                if (errorCallback) errorCallback(error);
+                return null;
+            }
+        } else if (navigator.geolocation) {
+            return Geolocation.watchPosition(successCallback, errorCallback, options);
+        } else {
+            if (errorCallback) errorCallback(new Error('Geolocation not available'));
+            return null;
+        }
+    },
+
+    clearWatch(watchId) {
+        if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Geolocation) {
+            window.Capacitor.Plugins.Geolocation.clearWatch({ id: watchId });
+        } else if (navigator.geolocation && watchId) {
+            Geolocation.clearWatch(watchId);
+        }
+    }
+};
+
 // --- Card Engine ---
 const CardStack = {
     currentIndex: 0, cards: [],
@@ -362,7 +433,7 @@ function initTopoBackground() {
 // --- Maps & Location ---
 function initMainMap() {
     if (mainMap) return;
-    navigator.geolocation.getCurrentPosition(
+    Geolocation.getCurrentPosition(
         p => createMain(p.coords.latitude, p.coords.longitude),
         () => createMain(40.4168, -3.7038)
     );
@@ -375,7 +446,7 @@ function createMain(lat, lng) {
     document.getElementById('centerMapBtn').onclick = () => {
         const btn = document.getElementById('centerMapBtn');
         btn.classList.add('loading');
-        navigator.geolocation.getCurrentPosition(
+        Geolocation.getCurrentPosition(
             p => {
                 mainMap.setView([p.coords.latitude, p.coords.longitude], 16);
                 btn.classList.remove('loading');
@@ -421,8 +492,8 @@ function resetCheckin() {
     document.getElementById('checkinDate').value = now.toISOString().split('T')[0];
     document.getElementById('checkinTime').value = now.toTimeString().slice(0, 5);
     
-    if (watchId) navigator.geolocation.clearWatch(watchId);
-    watchId = navigator.geolocation.watchPosition(
+    if (watchId) Geolocation.clearWatch(watchId);
+    watchId = Geolocation.watchPosition(
         p => updateLoc(p.coords.latitude, p.coords.longitude),
         e => showToast('Buscando señal GPS...', 'error'), {enableHighAccuracy:true}
     );
@@ -432,7 +503,7 @@ function updateLoc(lat, lng) {
     if (!checkinMap) {
         checkinMap = Maps.createMap('mapPreview', lat, lng, 16);
         checkinMap.on('click', e => {
-            if (watchId) navigator.geolocation.clearWatch(watchId);
+            if (watchId) Geolocation.clearWatch(watchId);
             watchId = null;
             updateLoc(e.latlng.lat, e.latlng.lng);
             showToast('Ubicación fijada manualmente');
@@ -443,9 +514,9 @@ function updateLoc(lat, lng) {
         document.getElementById('centerPreviewBtn').onclick = () => {
             const btn = document.getElementById('centerPreviewBtn');
             btn.classList.add('loading');
-            navigator.geolocation.getCurrentPosition(
+            Geolocation.getCurrentPosition(
                 p => {
-                    if (watchId) navigator.geolocation.clearWatch(watchId);
+                    if (watchId) Geolocation.clearWatch(watchId);
                     watchId = null;
                     updateLoc(p.coords.latitude, p.coords.longitude);
                     btn.classList.remove('loading');
@@ -500,7 +571,7 @@ window.selectPlace = (name, lat, lng) => {
 
     // Stop GPS tracking when manually selecting a place
     if (watchId) {
-        navigator.geolocation.clearWatch(watchId);
+        Geolocation.clearWatch(watchId);
         watchId = null;
     }
 
@@ -605,7 +676,7 @@ window.editCheckin = (id) => {
     CardStack.currentIndex = 1; CardStack.updatePositions();
     setTimeout(() => {
         if (!checkinMap) checkinMap = Maps.createMap('mapPreview', 0, 0, 16);
-        if (watchId) navigator.geolocation.clearWatch(watchId); watchId = null;
+        if (watchId) Geolocation.clearWatch(watchId); watchId = null;
         updateLoc(c.location.lat, c.location.lng);
     }, 300);
 };

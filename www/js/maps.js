@@ -58,29 +58,43 @@ const Maps = {
 
     // Obtener ubicación actual
     getCurrentPosition() {
-        return new Promise((resolve, reject) => {
-            if (!navigator.geolocation) {
-                reject(new Error('Geolocalización no disponible'));
-                return;
-            }
+        return new Promise(async (resolve, reject) => {
+            const options = {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            };
 
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
+            // Use Capacitor plugin on mobile
+            if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Geolocation) {
+                try {
+                    const position = await window.Capacitor.Plugins.Geolocation.getCurrentPosition(options);
                     resolve({
                         lat: position.coords.latitude,
                         lng: position.coords.longitude,
                         accuracy: position.coords.accuracy
                     });
-                },
-                (error) => {
+                } catch (error) {
                     reject(error);
-                },
-                {
-                    enableHighAccuracy: true,
-                    timeout: 10000,
-                    maximumAge: 0
                 }
-            );
+            } else if (navigator.geolocation) {
+                // Fallback to browser geolocation for web
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        resolve({
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude,
+                            accuracy: position.coords.accuracy
+                        });
+                    },
+                    (error) => {
+                        reject(error);
+                    },
+                    options
+                );
+            } else {
+                reject(new Error('Geolocalización no disponible'));
+            }
         });
     },
 
