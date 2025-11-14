@@ -72,7 +72,7 @@ const Geolocation = {
                 return null;
             }
         } else if (navigator.geolocation) {
-            return Geolocation.watchPosition(successCallback, errorCallback, options);
+            return navigator.geolocation.watchPosition(successCallback, errorCallback, options);
         } else {
             if (errorCallback) errorCallback(new Error('Geolocation not available'));
             return null;
@@ -83,7 +83,7 @@ const Geolocation = {
         if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Geolocation) {
             window.Capacitor.Plugins.Geolocation.clearWatch({ id: watchId });
         } else if (navigator.geolocation && watchId) {
-            Geolocation.clearWatch(watchId);
+            navigator.geolocation.clearWatch(watchId);
         }
     }
 };
@@ -493,10 +493,10 @@ function resetCheckin() {
     document.getElementById('checkinTime').value = now.toTimeString().slice(0, 5);
     
     if (watchId) Geolocation.clearWatch(watchId);
-    watchId = Geolocation.watchPosition(
+    Geolocation.watchPosition(
         p => updateLoc(p.coords.latitude, p.coords.longitude),
         e => showToast('Buscando señal GPS...', 'error'), {enableHighAccuracy:true}
-    );
+    ).then(id => { watchId = id; });
 }
 function updateLoc(lat, lng) {
     currentPos = {lat, lng};
