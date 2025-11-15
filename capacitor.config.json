@@ -1,0 +1,21 @@
+{
+  "appId": "com.yeah.app",
+  "appName": "Yeah¡",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#1a1a1a",
+      "showSpinner": false,
+      "androidSpinnerStyle": "small",
+      "spinnerColor": "#4CAF50"
+    },
+    "StatusBar": {
+      "overlaysWebView": true,
+      "backgroundColor": "#00000000"
+    }
+  }
+}

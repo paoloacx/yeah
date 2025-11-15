@@ -17,6 +17,83 @@ function showToast(msg, type = 'normal') {
     }, 3000);
 }
 
+// --- Geolocation Wrapper (Capacitor + Web) ---
+const Geolocation = {
+    async getCurrentPosition(successCallback, errorCallback, options) {
+        if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Geolocation) {
+            try {
+                console.log('Using Capacitor Geolocation getCurrentPosition');
+                const position = await window.Capacitor.Plugins.Geolocation.getCurrentPosition(options);
+                console.log('Capacitor position received:', position);
+                successCallback({
+                    coords: {
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                        accuracy: position.coords.accuracy,
+                        altitude: position.coords.altitude,
+                        altitudeAccuracy: position.coords.altitudeAccuracy,
+                        heading: position.coords.heading,
+                        speed: position.coords.speed
+                    },
+                    timestamp: position.timestamp
+                });
+            } catch (error) {
+                console.error('Capacitor getCurrentPosition error:', error);
+                if (errorCallback) errorCallback(error);
+            }
+        } else if (navigator.geolocation) {
+            console.log('Using navigator.geolocation getCurrentPosition');
+            navigator.geolocation.getCurrentPosition(successCallback, errorCallback, options);
+        } else {
+            console.error('Geolocation not available');
+            if (errorCallback) errorCallback(new Error('Geolocation not available'));
+        }
+    },
+
+    watchPosition(successCallback, errorCallback, options) {
+        if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Geolocation) {
+            // Capacitor watchPosition returns a promise with the watchId
+            return window.Capacitor.Plugins.Geolocation.watchPosition(options, (position, err) => {
+                if (err) {
+                    console.error('Geolocation watchPosition error:', err);
+                    if (errorCallback) errorCallback(err);
+                } else {
+                    console.log('Geolocation position received:', position);
+                    successCallback({
+                        coords: {
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude,
+                            accuracy: position.coords.accuracy,
+                            altitude: position.coords.altitude,
+                            altitudeAccuracy: position.coords.altitudeAccuracy,
+                            heading: position.coords.heading,
+                            speed: position.coords.speed
+                        },
+                        timestamp: position.timestamp
+                    });
+                }
+            }).catch(error => {
+                console.error('Geolocation watchPosition catch:', error);
+                if (errorCallback) errorCallback(error);
+                return null;
+            });
+        } else if (navigator.geolocation) {
+            return Promise.resolve(navigator.geolocation.watchPosition(successCallback, errorCallback, options));
+        } else {
+            if (errorCallback) errorCallback(new Error('Geolocation not available'));
+            return Promise.resolve(null);
+        }
+    },
+
+    clearWatch(watchId) {
+        if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Geolocation) {
+            window.Capacitor.Plugins.Geolocation.clearWatch({ id: watchId });
+        } else if (navigator.geolocation && watchId) {
+            navigator.geolocation.clearWatch(watchId);
+        }
+    }
+};
+
 // --- Card Engine ---
 const CardStack = {
     currentIndex: 0, cards: [],
@@ -94,7 +171,10 @@ const CardStack = {
             window.mainMap ? setTimeout(() => window.mainMap.invalidateSize(), 200) : initMainMap();
             updateQuickStats();
         }
-        if (type === 'checkin' && !window.editingId) resetCheckin();
+        if (type === 'checkin' && !window.editingId) {
+            // Delay to ensure map container has dimensions (card transition is 600ms)
+            setTimeout(() => resetCheckin(), 700);
+        }
         if (type === 'history') loadHistory();
         if (type === 'stats') loadStats();
     }
@@ -107,6 +187,10 @@ let currentPlaceName = null;
 let hasUnsavedChanges = false;
 
 document.addEventListener('DOMContentLoaded', async () => {
+    console.log('========================================');
+    console.log('YEAH APP VERSION 2.0 - LOADED SUCCESSFULLY');
+    console.log('========================================');
+
     CardStack.init();
     initTopoBackground();
 
@@ -230,33 +314,59 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Dark mode toggle
     const darkModeToggle = document.getElementById('darkModeToggle');
+    const themeLabel = document.getElementById('themeLabel');
     const savedTheme = localStorage.getItem('theme');
+
+    function updateThemeLabel(isDark) {
+        if (themeLabel) {
+            themeLabel.textContent = isDark ? 'Modo Claro' : 'Modo Oscuro';
+        }
+    }
+
+    console.log('Dark mode init - savedTheme:', savedTheme);
+    console.log('System prefers dark:', window.matchMedia('(prefers-color-scheme: dark)').matches);
 
     if (savedTheme === 'dark') {
         document.body.classList.add('dark-mode');
         darkModeToggle.checked = true;
+        updateThemeLabel(true);
+        console.log('Applied saved DARK theme');
     } else if (savedTheme === 'light') {
         document.body.classList.remove('dark-mode');
         darkModeToggle.checked = false;
+        updateThemeLabel(false);
+        console.log('Applied saved LIGHT theme');
     } else {
         // Auto detect system preference and save it
         if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
             document.body.classList.add('dark-mode');
             darkModeToggle.checked = true;
+            updateThemeLabel(true);
             localStorage.setItem('theme', 'dark');
+            console.log('Auto-detected DARK, saved to localStorage');
         } else {
+            document.body.classList.remove('dark-mode');
+            darkModeToggle.checked = false;
+            updateThemeLabel(false);
             localStorage.setItem('theme', 'light');
+            console.log('Auto-detected LIGHT, saved to localStorage');
         }
     }
 
     darkModeToggle.addEventListener('change', (e) => {
+        console.log('Toggle changed! Checked:', e.target.checked);
         if (e.target.checked) {
             document.body.classList.add('dark-mode');
             localStorage.setItem('theme', 'dark');
+            updateThemeLabel(true);
+            console.log('Switched to DARK mode');
         } else {
             document.body.classList.remove('dark-mode');
             localStorage.setItem('theme', 'light');
+            updateThemeLabel(false);
+            console.log('Switched to LIGHT mode');
         }
+        console.log('Body classes:', document.body.className);
         if ('vibrate' in navigator) navigator.vibrate(30);
     });
     
@@ -287,6 +397,30 @@ document.addEventListener('DOMContentLoaded', async () => {
             localStorage.setItem('hasSeenWelcome', 'true');
         }
     }, 1500);
+
+    // Search button
+    document.getElementById('searchBtn').addEventListener('click', () => {
+        const query = document.getElementById('placeSearch').value.trim();
+        console.log('searchBtn clicked: query=', query, 'currentPos=', currentPos);
+        if (!query) {
+            showToast('Escribe algo para buscar', 'error');
+            return;
+        }
+        if (!currentPos) {
+            showToast('Esperando ubicación...', 'error');
+            return;
+        }
+        showToast('Buscando lugares...');
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&lat=${currentPos.lat}&lon=${currentPos.lng}`)
+            .then(r => r.json())
+            .then(results => {
+                const container = document.getElementById('placeResults');
+                container.innerHTML = results.map(r =>
+                    `<div class="place-item" onclick="selectPlace('${r.display_name.replace(/'/g, "\\'")}', ${r.lat}, ${r.lon})">${r.display_name}</div>`
+                ).join('');
+            })
+            .catch(() => showToast('Error al buscar', 'error'));
+    });
 });
 
 // --- Topographic Background ---
@@ -345,7 +479,7 @@ function initTopoBackground() {
 // --- Maps & Location ---
 function initMainMap() {
     if (mainMap) return;
-    navigator.geolocation.getCurrentPosition(
+    Geolocation.getCurrentPosition(
         p => createMain(p.coords.latitude, p.coords.longitude),
         () => createMain(40.4168, -3.7038)
     );
@@ -358,7 +492,7 @@ function createMain(lat, lng) {
     document.getElementById('centerMapBtn').onclick = () => {
         const btn = document.getElementById('centerMapBtn');
         btn.classList.add('loading');
-        navigator.geolocation.getCurrentPosition(
+        Geolocation.getCurrentPosition(
             p => {
                 mainMap.setView([p.coords.latitude, p.coords.longitude], 16);
                 btn.classList.remove('loading');
@@ -383,8 +517,8 @@ function resetCheckin() {
     currentPhoto = null;
     currentPlaceName = null;
     hasUnsavedChanges = false;
-    document.getElementById('cardTitleCheckin').textContent = 'Nuevo Yeah¡';
-    document.getElementById('saveCheckin').textContent = 'Guardar Yeah¡';
+    // Title is static in HTML, no need to change it
+    document.getElementById('saveCheckin').textContent = 'Guardar yeah¡';
     document.getElementById('placeNote').value = '';
     document.getElementById('photoInput').value = '';
     document.getElementById('photoPreview').style.display = 'none';
@@ -399,23 +533,136 @@ function resetCheckin() {
     document.getElementById('toggleDetailsBtn').classList.remove('active');
 
     document.getElementById('dateTimeSection').style.display = 'none';
-    
+
     const now = new Date();
     document.getElementById('checkinDate').value = now.toISOString().split('T')[0];
     document.getElementById('checkinTime').value = now.toTimeString().slice(0, 5);
-    
-    if (watchId) navigator.geolocation.clearWatch(watchId);
-    watchId = navigator.geolocation.watchPosition(
-        p => updateLoc(p.coords.latitude, p.coords.longitude),
-        e => showToast('Buscando señal GPS...', 'error'), {enableHighAccuracy:true}
+
+    // Clear any existing watch
+    if (watchId) {
+        Geolocation.clearWatch(watchId);
+        watchId = null;
+    }
+
+    // Create map IMMEDIATELY with default location (Madrid)
+    // This ensures the map always exists
+    console.log('resetCheckin: creating map with default location');
+    currentPos = {lat: 40.4168, lng: -3.7038};
+    if (!checkinMap) {
+        console.log('resetCheckin: initializing new map');
+        initCheckinMap(currentPos.lat, currentPos.lng);
+    } else {
+        console.log('resetCheckin: map already exists, updating view');
+        // Recalculate map dimensions in case container size changed
+        setTimeout(() => checkinMap.invalidateSize(), 100);
+        checkinMap.setView([currentPos.lat, currentPos.lng], 16);
+        if (marker) marker.remove();
+        marker = Maps.addMarker(checkinMap, currentPos.lat, currentPos.lng);
+    }
+
+    // NOW try to get real position
+    console.log('resetCheckin: requesting geolocation');
+
+    Geolocation.getCurrentPosition(
+        p => {
+            console.log('resetCheckin: got real position', p);
+            updateLoc(p.coords.latitude, p.coords.longitude);
+            // Don't auto-start watching - let user control it
+        },
+        e => {
+            console.error('resetCheckin: geolocation error', e);
+            // Map already created with default location, nothing else to do
+        },
+        {enableHighAccuracy: true, timeout: 10000, maximumAge: 0}
     );
+}
+
+function initCheckinMap(lat, lng) {
+    console.log('initCheckinMap: creating map at', lat, lng);
+
+    // Verify container exists
+    const container = document.getElementById('mapPreview');
+    if (!container) {
+        console.error('initCheckinMap: container not found!');
+        // Retry after a delay
+        setTimeout(() => {
+            console.log('initCheckinMap: retrying after 500ms...');
+            initCheckinMap(lat, lng);
+        }, 500);
+        return;
+    }
+
+    const rect = container.getBoundingClientRect();
+    console.log('initCheckinMap: container dimensions:', rect.width, 'x', rect.height);
+
+    // Create map even if dimensions are zero - Leaflet can handle it
+    checkinMap = Maps.createMap('mapPreview', lat, lng, 16);
+
+    // If dimensions were zero, fix size after a delay
+    if (rect.width === 0 || rect.height === 0) {
+        console.warn('initCheckinMap: container had zero dimensions, will invalidate size');
+        setTimeout(() => {
+            if (checkinMap) {
+                console.log('initCheckinMap: invalidating size after delay');
+                checkinMap.invalidateSize();
+            }
+        }, 300);
+    }
+
+    checkinMap.on('click', e => {
+        if (watchId) Geolocation.clearWatch(watchId);
+        watchId = null;
+        updateLoc(e.latlng.lat, e.latlng.lng);
+        showToast('Ubicación fijada manualmente');
+        if ('vibrate' in navigator) navigator.vibrate(50);
+    });
+
+    // Center preview button
+    document.getElementById('centerPreviewBtn').onclick = () => {
+        const btn = document.getElementById('centerPreviewBtn');
+        btn.classList.add('loading');
+        Geolocation.getCurrentPosition(
+            p => {
+                if (watchId) Geolocation.clearWatch(watchId);
+                watchId = null;
+                updateLoc(p.coords.latitude, p.coords.longitude);
+                btn.classList.remove('loading');
+                if ('vibrate' in navigator) navigator.vibrate(50);
+            },
+            () => {
+                btn.classList.remove('loading');
+                showToast('No se pudo obtener ubicación', 'error');
+            },
+            {enableHighAccuracy: true}
+        );
+    };
+
+    marker = Maps.addMarker(checkinMap, lat, lng);
+    console.log('initCheckinMap: map created successfully');
+}
+
+function startWatchingPosition() {
+    console.log('startWatchingPosition: starting watch');
+    Geolocation.watchPosition(
+        p => {
+            console.log('watchPosition: got update', p);
+            updateLoc(p.coords.latitude, p.coords.longitude);
+        },
+        e => console.error('watchPosition: error', e),
+        {enableHighAccuracy: true}
+    ).then(id => {
+        watchId = id;
+        console.log('watchPosition: got watchId', id);
+    }).catch(err => {
+        console.error('watchPosition: promise error', err);
+    });
 }
 function updateLoc(lat, lng) {
     currentPos = {lat, lng};
     if (!checkinMap) {
         checkinMap = Maps.createMap('mapPreview', lat, lng, 16);
         checkinMap.on('click', e => {
-            if (watchId) navigator.geolocation.clearWatch(watchId);
+            if (watchId) Geolocation.clearWatch(watchId);
             watchId = null;
             updateLoc(e.latlng.lat, e.latlng.lng);
             showToast('Ubicación fijada manualmente');
@@ -426,9 +673,9 @@ function updateLoc(lat, lng) {
         document.getElementById('centerPreviewBtn').onclick = () => {
             const btn = document.getElementById('centerPreviewBtn');
             btn.classList.add('loading');
-            navigator.geolocation.getCurrentPosition(
+            Geolocation.getCurrentPosition(
                 p => {
-                    if (watchId) navigator.geolocation.clearWatch(watchId);
+                    if (watchId) Geolocation.clearWatch(watchId);
                     watchId = null;
                     updateLoc(p.coords.latitude, p.coords.longitude);
                     btn.classList.remove('loading');
@@ -447,39 +694,19 @@ function updateLoc(lat, lng) {
     marker = Maps.addMarker(checkinMap, lat, lng);
 }
 
-// --- Search ---
-document.getElementById('searchBtn').onclick = () => {
-    const query = document.getElementById('placeSearch').value.trim();
-    if (!query || !currentPos) return;
-    showToast('Buscando lugares...');
-    if (window.Maps && window.Maps.searchNearby) {
-        window.Maps.searchNearby(currentPos.lat, currentPos.lng, query)
-            .then(results => {
-                 const container = document.getElementById('placeResults');
-                 container.innerHTML = results.map(r => 
-                     `<div class="place-item" onclick="selectPlace('${r.display_name.replace(/'/g, "\\'")}', ${r.lat}, ${r.lon})">${r.display_name}</div>`
-                 ).join('');
-            })
-            .catch(() => showToast('Error en la búsqueda', 'error'));
-    } else {
-        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&lat=${currentPos.lat}&lon=${currentPos.lng}`)
-            .then(r => r.json())
-            .then(results => {
-                const container = document.getElementById('placeResults');
-                 container.innerHTML = results.map(r => 
-                     `<div class="place-item" onclick="selectPlace('${r.display_name.replace(/'/g, "\\'")}', ${r.lat}, ${r.lon})">${r.display_name}</div>`
-                 ).join('');
-            })
-            .catch(() => showToast('Error al buscar', 'error'));
-    }
-};
-
 window.selectPlace = (name, lat, lng) => {
     currentPlaceName = name;
     document.getElementById('selectedPlaceName').textContent = name;
     document.getElementById('selectedPlaceDisplay').style.display = 'flex';
     document.getElementById('placeResults').innerHTML = '';
     document.getElementById('placeSearch').value = '';
+
+    // Stop GPS tracking when manually selecting a place
+    if (watchId) {
+        Geolocation.clearWatch(watchId);
+        watchId = null;
+    }
+
     updateLoc(parseFloat(lat), parseFloat(lng));
     hasUnsavedChanges = true;
     if ('vibrate' in navigator) navigator.vibrate(30);
@@ -537,7 +764,7 @@ document.getElementById('saveCheckin').onclick = () => {
     
     if ('vibrate' in navigator) navigator.vibrate([50, 100, 50]);
     
-    showToast(editingId ? '¡Yeah actualizado!' : '¡Yeah¡ guardado!', 'success');
+    showToast(editingId ? '¡yeah actualizado!' : '¡yeah¡ guardado!', 'success');
     hasUnsavedChanges = false;
     resetCheckin();
     CardStack.currentIndex = 0; CardStack.updatePositions();
@@ -548,8 +775,8 @@ document.getElementById('saveCheckin').onclick = () => {
 window.editCheckin = (id) => {
     const c = Storage.getCheckin(id); if (!c) return;
     editingId = id; currentPos = c.location; currentPhoto = c.photo || null; currentPlaceName = c.placeName || null;
-    document.getElementById('cardTitleCheckin').textContent = 'Editando Yeah¡';
-    document.getElementById('saveCheckin').textContent = 'Actualizar Yeah¡';
+    document.getElementById('cardTitleCheckin').textContent = 'Editando yeah¡';
+    document.getElementById('saveCheckin').textContent = 'Actualizar yeah¡';
     document.getElementById('placeNote').value = c.note || '';
 
     // Show place name if exists
@@ -581,7 +808,7 @@ window.editCheckin = (id) => {
     CardStack.currentIndex = 1; CardStack.updatePositions();
     setTimeout(() => {
         if (!checkinMap) checkinMap = Maps.createMap('mapPreview', 0, 0, 16);
-        if (watchId) navigator.geolocation.clearWatch(watchId); watchId = null;
+        if (watchId) Geolocation.clearWatch(watchId); watchId = null;
         updateLoc(c.location.lat, c.location.lng);
     }, 300);
 };
@@ -616,10 +843,10 @@ document.getElementById('exportICal').onclick = () => {
     data.forEach(c => {
         const d = new Date(c.timestamp).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
 
-        // Nombre del evento: "Estoy en" + placeName o coordenadas, seguido de " - Yeah¡"
+        // Nombre del evento: "Estoy en" + placeName o coordenadas, seguido de " - yeah¡"
         const eventName = c.placeName
-            ? `Estoy en ${c.placeName} - Yeah¡`
-            : `Estoy en ${c.location.lat.toFixed(4)}, ${c.location.lng.toFixed(4)} - Yeah¡`;
+            ? `Estoy en ${c.placeName} - yeah¡`
+            : `Estoy en ${c.location.lat.toFixed(4)}, ${c.location.lng.toFixed(4)} - yeah¡`;
 
         // Ubicación: nombre del lugar o coordenadas en texto
         const locationText = c.placeName || `${c.location.lat.toFixed(4)}, ${c.location.lng.toFixed(4)}`;
