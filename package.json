@@ -1,0 +1,33 @@
+{
+  "name": "yeah-app",
+  "version": "1.0.0",
+  "description": "Registra todos los lugares donde has estado",
+  "main": "index.html",
+  "scripts": {
+    "build": "echo 'No build needed - vanilla JS'",
+    "capacitor:init": "npx cap init",
+    "capacitor:add:android": "npx cap add android",
+    "capacitor:sync": "npx cap sync",
+    "capacitor:open:android": "npx cap open android",
+    "android:build": "npx cap sync && npx cap open android"
+  },
+  "keywords": [
+    "geolocation",
+    "pwa",
+    "check-in"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@capacitor/cli": "^6.0.0"
+  },
+  "dependencies": {
+    "@capacitor/core": "^6.0.0",
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/camera": "^6.0.0",
+    "@capacitor/geolocation": "^6.0.0",
+    "@capacitor/preferences": "^6.0.0",
+    "@capacitor/splash-screen": "^6.0.0",
+    "@capacitor/status-bar": "^6.0.0"
+  }
+}
