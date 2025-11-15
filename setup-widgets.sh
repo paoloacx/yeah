@@ -28,7 +28,7 @@ cat > android/app/src/main/res/layout/widget_quick_checkin.xml << 'EOF'
     android:orientation="vertical"
     android:gravity="center"
     android:background="@drawable/widget_background"
-    android:padding="8dp">
+    android:padding="12dp">
 
     <ImageView
         android:layout_width="48dp"
@@ -38,6 +38,16 @@ cat > android/app/src/main/res/layout/widget_quick_checkin.xml << 'EOF'
         android:background="@drawable/green_circle"
         android:tint="#FFFFFF"
         android:padding="12dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Yeah¡"
+        android:textColor="#FFFFFF"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:layout_marginTop="4dp"/>
 
 </LinearLayout>
 EOF
@@ -96,7 +106,7 @@ cat > android/app/src/main/res/layout/widget_top_places.xml << 'EOF'
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="@drawable/widget_background"
-    android:padding="12dp">
+    android:padding="16dp">
 
     <TextView
         android:layout_width="wrap_content"
@@ -210,7 +220,7 @@ cat > android/app/src/main/res/drawable/widget_background.xml << 'EOF'
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
     <solid android:color="#1E1E1E"/>
-    <corners android:radius="16dp"/>
+    <corners android:radius="28dp"/>
     <stroke android:width="2dp" android:color="#4CAF50"/>
 </shape>
 EOF
