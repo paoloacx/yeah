@@ -31,21 +31,13 @@ cat > android/app/src/main/res/layout/widget_quick_checkin.xml << 'EOF'
     android:padding="8dp">
 
     <ImageView
-        android:layout_width="32dp"
-        android:layout_height="32dp"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
         android:src="@drawable/ic_add"
         android:contentDescription="@string/new_checkin"
-        android:tint="#4CAF50"/>
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Nuevo\nYeah¡"
-        android:textColor="#FFFFFF"
-        android:textSize="12sp"
-        android:textStyle="bold"
-        android:gravity="center"
-        android:layout_marginTop="4dp"/>
+        android:background="@drawable/green_circle"
+        android:tint="#FFFFFF"
+        android:padding="12dp"/>
 
 </LinearLayout>
 EOF
@@ -102,110 +94,45 @@ cat > android/app/src/main/res/layout/widget_top_places.xml << 'EOF'
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
+    android:orientation="horizontal"
     android:background="@drawable/widget_background"
-    android:padding="12dp">
+    android:padding="12dp"
+    android:gravity="center">
 
     <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Top 3 lugares"
+        android:id="@+id/widget_place_1_count"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@drawable/count_badge"
+        android:text="0"
         android:textColor="#FFFFFF"
-        android:textSize="14sp"
+        android:textSize="16sp"
         android:textStyle="bold"
-        android:layout_marginBottom="8dp"/>
+        android:gravity="center"
+        android:layout_marginEnd="8dp"/>
 
-    <LinearLayout
-        android:id="@+id/widget_place_1"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginBottom="4dp"
-        android:gravity="center_vertical">
+    <TextView
+        android:id="@+id/widget_place_2_count"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@drawable/count_badge"
+        android:text="0"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:layout_marginEnd="8dp"/>
 
-        <TextView
-            android:id="@+id/widget_place_1_name"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="📍 Lugar 1"
-            android:textColor="#E0E0E0"
-            android:textSize="12sp"
-            android:singleLine="true"
-            android:ellipsize="end"/>
-
-        <TextView
-            android:id="@+id/widget_place_1_count"
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-            android:background="@drawable/count_badge"
-            android:text="0"
-            android:textColor="#FFFFFF"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:gravity="center"/>
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/widget_place_2"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginBottom="4dp"
-        android:gravity="center_vertical">
-
-        <TextView
-            android:id="@+id/widget_place_2_name"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="📍 Lugar 2"
-            android:textColor="#E0E0E0"
-            android:textSize="12sp"
-            android:singleLine="true"
-            android:ellipsize="end"/>
-
-        <TextView
-            android:id="@+id/widget_place_2_count"
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-            android:background="@drawable/count_badge"
-            android:text="0"
-            android:textColor="#FFFFFF"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:gravity="center"/>
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/widget_place_3"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
-
-        <TextView
-            android:id="@+id/widget_place_3_name"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="📍 Lugar 3"
-            android:textColor="#E0E0E0"
-            android:textSize="12sp"
-            android:singleLine="true"
-            android:ellipsize="end"/>
-
-        <TextView
-            android:id="@+id/widget_place_3_count"
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-            android:background="@drawable/count_badge"
-            android:text="0"
-            android:textColor="#FFFFFF"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:gravity="center"/>
-    </LinearLayout>
+    <TextView
+        android:id="@+id/widget_place_3_count"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@drawable/count_badge"
+        android:text="0"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:gravity="center"/>
 
 </LinearLayout>
 EOF
@@ -220,6 +147,15 @@ cat > android/app/src/main/res/drawable/widget_background.xml << 'EOF'
     <solid android:color="#1E1E1E"/>
     <corners android:radius="16dp"/>
     <stroke android:width="2dp" android:color="#4CAF50"/>
+</shape>
+EOF
+
+# Green Circle for + button
+cat > android/app/src/main/res/drawable/green_circle.xml << 'EOF'
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="#4CAF50"/>
 </shape>
 EOF
 
@@ -471,29 +407,23 @@ public class TopPlacesWidget extends AppWidgetProvider {
 
             if (topPlaces.length() > 0) {
                 JSONObject place1 = topPlaces.getJSONObject(0);
-                views.setTextViewText(R.id.widget_place_1_name, "📍 " + place1.getString("name"));
                 views.setTextViewText(R.id.widget_place_1_count, String.valueOf(place1.getInt("count")));
-                views.setViewVisibility(R.id.widget_place_1, View.VISIBLE);
             } else {
-                views.setViewVisibility(R.id.widget_place_1, View.GONE);
+                views.setTextViewText(R.id.widget_place_1_count, "0");
             }
 
             if (topPlaces.length() > 1) {
                 JSONObject place2 = topPlaces.getJSONObject(1);
-                views.setTextViewText(R.id.widget_place_2_name, "📍 " + place2.getString("name"));
                 views.setTextViewText(R.id.widget_place_2_count, String.valueOf(place2.getInt("count")));
-                views.setViewVisibility(R.id.widget_place_2, View.VISIBLE);
             } else {
-                views.setViewVisibility(R.id.widget_place_2, View.GONE);
+                views.setTextViewText(R.id.widget_place_2_count, "0");
             }
 
             if (topPlaces.length() > 2) {
                 JSONObject place3 = topPlaces.getJSONObject(2);
-                views.setTextViewText(R.id.widget_place_3_name, "📍 " + place3.getString("name"));
                 views.setTextViewText(R.id.widget_place_3_count, String.valueOf(place3.getInt("count")));
-                views.setViewVisibility(R.id.widget_place_3, View.VISIBLE);
             } else {
-                views.setViewVisibility(R.id.widget_place_3, View.GONE);
+                views.setTextViewText(R.id.widget_place_3_count, "0");
             }
 
         } catch (JSONException e) {
@@ -501,6 +431,7 @@ public class TopPlacesWidget extends AppWidgetProvider {
         }
 
         Intent intent = new Intent(context, MainActivity.class);
+        intent.setAction("OPEN_CHECKIN");
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
 
         PendingIntent pendingIntent = PendingIntent.getActivity(
@@ -510,9 +441,9 @@ public class TopPlacesWidget extends AppWidgetProvider {
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
 
-        views.setOnClickPendingIntent(R.id.widget_place_1, pendingIntent);
-        views.setOnClickPendingIntent(R.id.widget_place_2, pendingIntent);
-        views.setOnClickPendingIntent(R.id.widget_place_3, pendingIntent);
+        views.setOnClickPendingIntent(R.id.widget_place_1_count, pendingIntent);
+        views.setOnClickPendingIntent(R.id.widget_place_2_count, pendingIntent);
+        views.setOnClickPendingIntent(R.id.widget_place_3_count, pendingIntent);
 
         appWidgetManager.updateAppWidget(appWidgetId, views);
     }
