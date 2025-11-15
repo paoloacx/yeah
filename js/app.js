@@ -157,6 +157,14 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => loader.remove(), 500);
         }
     }, 800);
+
+    // FAB Button - Navigate to check-in card
+    document.getElementById('fabButton').addEventListener('click', () => {
+        CardStack.currentIndex = 1;
+        CardStack.updatePositions();
+        CardStack.loadCardContent(1);
+        if ('vibrate' in navigator) navigator.vibrate(50);
+    });
 });
 
 // --- Topographic Background ---
@@ -243,10 +251,8 @@ function createMain(lat, lng) {
     };
 }
 function updateQuickStats() {
-    const checkins = Storage.getAllCheckins();
-    const places = new Set(checkins.map(c => `${c.location.lat.toFixed(3)},${c.location.lng.toFixed(3)}`)).size;
-    document.getElementById('quickStats').innerHTML = 
-        `Llevas <strong>${checkins.length}</strong> Yeahs¡ en <strong>${places}</strong> lugares distintos.`;
+    // Widget de estadísticas rápidas eliminado según solicitud del usuario
+    document.getElementById('quickStats').innerHTML = '';
 }
 function resetCheckin() {
     editingId = null;
@@ -576,10 +582,40 @@ function loadStats() {
     document.getElementById('statPhotos').textContent = checkins.filter(c => c.photo).length;
     document.getElementById('statNotes').textContent = checkins.filter(c => c.note && c.note.trim()).length;
     
-    const places = {}; checkins.forEach(c => { const k = `${c.location.lat.toFixed(3)}, ${c.location.lng.toFixed(3)}`; places[k] = (places[k]||0)+1; });
+    const places = {};
+    const placesData = {}; // Store lat/lng for each place
+    checkins.forEach(c => {
+        const k = `${c.location.lat.toFixed(3)}, ${c.location.lng.toFixed(3)}`;
+        places[k] = (places[k]||0)+1;
+        if (!placesData[k]) {
+            placesData[k] = { lat: c.location.lat, lng: c.location.lng };
+        }
+    });
     const sortedPlaces = Object.entries(places).sort((a,b) => b[1]-a[1]).slice(0,5);
-    document.getElementById('topPlaces').innerHTML = sortedPlaces.length ? sortedPlaces.map(([k,v]) => 
-        `<div class="top-item"><span>📍 ${k}</span><span class="place-count">${v}</span></div>`).join('') : '<p style="opacity:0.6;text-align:center">Sin datos</p>';
+    document.getElementById('topPlaces').innerHTML = sortedPlaces.length ? sortedPlaces.map(([k,v]) =>
+        `<div class="top-item clickable-place" data-lat="${placesData[k].lat}" data-lng="${placesData[k].lng}">
+            <span>📍 ${k}</span><span class="place-count">${v}</span>
+        </div>`).join('') : '<p style="opacity:0.6;text-align:center">Sin datos</p>';
+
+    // Add click handlers to top places
+    document.querySelectorAll('.clickable-place').forEach(item => {
+        item.addEventListener('click', () => {
+            const lat = parseFloat(item.dataset.lat);
+            const lng = parseFloat(item.dataset.lng);
+            // Navigate to check-in card and set location
+            CardStack.currentIndex = 1;
+            CardStack.updatePositions();
+            CardStack.loadCardContent(1);
+            // Set location after a small delay to ensure map is ready
+            setTimeout(() => {
+                if (watchId) navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+                updateLoc(lat, lng);
+                showToast('Ubicación seleccionada de Top lugares');
+            }, 300);
+            if ('vibrate' in navigator) navigator.vibrate(50);
+        });
+    });
 
     loadChart(checkins, 'monthlyChart', c => new Date(c.timestamp).toISOString().slice(0,7), (k) => {
         const [y, m] = k.split('-'); return new Date(y, m-1).toLocaleDateString('es-ES',{month:'short'});
