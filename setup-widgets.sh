@@ -474,7 +474,7 @@ public class TopPlacesWidget extends AppWidgetProvider {
     static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_top_places);
 
-        SharedPreferences prefs = context.getSharedPreferences("YeahPrefs", Context.MODE_PRIVATE);
+        SharedPreferences prefs = context.getSharedPreferences("CapacitorStorage", Context.MODE_PRIVATE);
         String topPlacesJson = prefs.getString("top_places", "[]");
 
         try {
