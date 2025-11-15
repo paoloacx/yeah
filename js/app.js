@@ -21,6 +21,7 @@ function showToast(msg, type = 'normal') {
 const CardStack = {
     currentIndex: 0, cards: [],
     startX: 0, currentX: 0, isDragging: false, hasMoved: false,
+    rafId: null, // Para requestAnimationFrame
     init() {
         this.cards = Array.from(document.querySelectorAll('.card'));
         this.totalCards = this.cards.length;
@@ -47,9 +48,16 @@ const CardStack = {
         if (!this.isDragging) return;
         this.currentX = e.clientX;
         if (Math.abs(this.currentX - this.startX) > 5) this.hasMoved = true;
-        const diff = this.currentX - this.startX;
-        const baseRotation = this.currentIndex === 1 ? 1.5 : (this.currentIndex === 2 ? -1.5 : 0);
-        this.cards[this.currentIndex].style.transform = `translateX(${diff * 0.7}px) rotate(${baseRotation + diff * 0.03}deg)`;
+
+        // Optimización: usar requestAnimationFrame para evitar repaint innecesarios
+        if (this.rafId) return; // Ya hay una actualización pendiente
+
+        this.rafId = requestAnimationFrame(() => {
+            const diff = this.currentX - this.startX;
+            const baseRotation = this.currentIndex === 1 ? 1.5 : (this.currentIndex === 2 ? -1.5 : 0);
+            this.cards[this.currentIndex].style.transform = `translateX(${diff * 0.7}px) rotate(${baseRotation + diff * 0.03}deg)`;
+            this.rafId = null; // Permitir próxima actualización
+        });
     },
     dragEnd() {
         if (!this.isDragging) return;

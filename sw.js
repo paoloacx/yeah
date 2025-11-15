@@ -1,4 +1,4 @@
-const CACHE_NAME = 'yeah-v15';
+const CACHE_NAME = 'yeah-v27'; // Actualizado con versión 1.0.27
 const TILES_CACHE = 'yeah-tiles-v1';
 const urlsToCache = [
   './',
@@ -8,6 +8,7 @@ const urlsToCache = [
   './js/storage.js',
   './js/maps.js',
   './js/export.js',
+  './js/widgets.js', // Añadido archivo widgets
   './manifest.json'
 ];
 

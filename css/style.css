@@ -223,7 +223,9 @@ body {
 /* CONTENIDO con ruido */
 .card-content {
     flex: 1; padding: 1.5rem; overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
+    -webkit-overflow-scrolling: touch; /* iOS momentum scrolling */
+    scroll-behavior: smooth; /* Scroll suave */
+    overscroll-behavior-y: contain; /* Evitar scroll fuera del contenedor */
     background-color: var(--content-bg);
     scrollbar-width: none;
     border-bottom-left-radius: var(--radius-card);
@@ -241,10 +243,15 @@ body {
 .card-content::-webkit-scrollbar { display: none; }
 
 /* UI */
+button, .btn-primary, .btn-secondary, .btn-icon, .map-center-btn, .checkin-item {
+    -webkit-tap-highlight-color: transparent; /* Quitar highlight azul en móviles */
+    touch-action: manipulation; /* Mejorar respuesta táctil */
+}
+
 .btn-primary, .btn-secondary {
     width: 100%; padding: 1.1rem; border: none; border-radius: 18px;
     font-size: 1rem; font-weight: 700; cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
+    transition: transform 0.15s, box-shadow 0.15s; /* Reducido de 0.2s para más responsividad */
 }
 .btn-primary {
     background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
@@ -256,7 +263,10 @@ body {
     border: 2px solid #ECEFF1;
     box-shadow: 0 4px 10px -3px rgba(0,0,0,0.5);
 }
-.btn-primary:active, .btn-secondary:active { transform: scale(0.97); }
+.btn-primary:active, .btn-secondary:active {
+    transform: scale(0.97);
+    transition: transform 0.05s; /* Respuesta inmediata al toque */
+}
 
 input, textarea, select {
     width: 100%; padding: 1rem; background: var(--input-bg);
@@ -295,9 +305,12 @@ input:focus, textarea:focus, select:focus {
     background: var(--card-bg); border-radius: 22px; padding: 1.2rem;
     margin-bottom: 1rem; box-shadow: 0 4px 15px -3px rgba(0,0,0,0.5);
     cursor: pointer;
-    transition: transform 0.2s;
+    transition: transform 0.15s, box-shadow 0.15s; /* Reducido de 0.2s */
 }
-.checkin-item:active { transform: scale(0.98); }
+.checkin-item:active {
+    transform: scale(0.98);
+    transition: transform 0.05s; /* Respuesta inmediata */
+}
 .checkin-item .date-time {
     font-size: 0.85rem; color: var(--text-secondary); font-weight: 600;
     text-transform: uppercase; margin-bottom: 0.5rem; display: block;
@@ -466,10 +479,14 @@ input:focus, textarea:focus, select:focus {
     min-width: 46px !important; border-radius: 50% !important;
     border: none; background: #f5f5f5; font-size: 1.2rem; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
-    transition: all 0.2s; aspect-ratio: 1 / 1; padding: 0;
+    transition: transform 0.15s, box-shadow 0.15s; /* Reducido de 0.2s */
+    aspect-ratio: 1 / 1; padding: 0;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
-.btn-icon:active { transform: scale(0.9); }
+.btn-icon:active {
+    transform: scale(0.9);
+    transition: transform 0.05s; /* Respuesta inmediata */
+}
 #searchBtn {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
@@ -491,11 +508,12 @@ input:focus, textarea:focus, select:focus {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s;
+    transition: transform 0.15s, box-shadow 0.15s; /* Reducido de 0.2s */
 }
 .map-center-btn:active {
     transform: scale(0.9);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    transition: transform 0.05s, box-shadow 0.05s; /* Respuesta inmediata */
 }
 .map-center-btn.loading {
     animation: pulse 1.5s ease-in-out infinite;

@@ -7,12 +7,21 @@ const Maps = {
             container._leaflet_id = null;
         }
 
-        const map = L.map(elementId).setView([lat, lng], zoom);
+        const map = L.map(elementId, {
+            preferCanvas: true, // Usar Canvas en lugar de SVG para mejor rendimiento
+            zoomControl: true,
+            attributionControl: true
+        }).setView([lat, lng], zoom);
 
-        // CartoDB Positron - estilo limpio y claro
+        // OpenStreetMap con optimizaciones de rendimiento
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors',
-            maxZoom: 19
+            maxZoom: 18, // Reducido de 19 para menos tiles
+            minZoom: 3,
+            updateWhenIdle: true, // Solo actualizar cuando el mapa está quieto
+            updateWhenZooming: false, // No actualizar durante el zoom (más fluido)
+            keepBuffer: 2, // Mantener 2 tiles fuera del viewport (reduce cargas)
+            maxNativeZoom: 18
         }).addTo(map);
 
         return map;
