@@ -1,6 +1,6 @@
 {
   "name": "yeah-app",
-  "version": "1.0.0",
+  "version": "1.0.27",
   "description": "Registra todos los lugares donde has estado",
   "main": "index.html",
   "scripts": {

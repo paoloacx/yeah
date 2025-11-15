@@ -68,17 +68,17 @@ const CardStack = {
             }
         }
     },
-    next() { 
-        this.currentIndex = (this.currentIndex + 1) % this.totalCards; 
-        this.updatePositions(); 
+    next() {
+        this.currentIndex = (this.currentIndex + 1) % this.totalCards;
+        this.updatePositions();
         this.loadCardContent(this.currentIndex);
-        if ('vibrate' in navigator) navigator.vibrate(30);
+        if ('vibrate' in navigator) navigator.vibrate(15); // Reducido de 30ms para mejor rendimiento
     },
-    prev() { 
-        this.currentIndex = (this.currentIndex - 1 + this.totalCards) % this.totalCards; 
-        this.updatePositions(); 
+    prev() {
+        this.currentIndex = (this.currentIndex - 1 + this.totalCards) % this.totalCards;
+        this.updatePositions();
         this.loadCardContent(this.currentIndex);
-        if ('vibrate' in navigator) navigator.vibrate(30);
+        if ('vibrate' in navigator) navigator.vibrate(15); // Reducido de 30ms para mejor rendimiento
     },
     updatePositions() {
         this.cards.forEach((c, i) => {
@@ -91,7 +91,13 @@ const CardStack = {
     loadCardContent(i) {
         const type = this.cards[i].dataset.card;
         if (type === 'map') {
-            window.mainMap ? setTimeout(() => window.mainMap.invalidateSize(), 200) : initMainMap();
+            if (window.mainMap) {
+                // Mapa ya existe, solo ajustar tamaño (reducido de 200ms a 100ms)
+                setTimeout(() => window.mainMap.invalidateSize(), 100);
+            } else {
+                // Lazy loading: crear mapa solo la primera vez
+                initMainMap();
+            }
             updateQuickStats();
         }
         if (type === 'checkin' && !window.editingId) resetCheckin();
