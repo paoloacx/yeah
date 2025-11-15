@@ -94,45 +94,110 @@ cat > android/app/src/main/res/layout/widget_top_places.xml << 'EOF'
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="horizontal"
+    android:orientation="vertical"
     android:background="@drawable/widget_background"
-    android:padding="12dp"
-    android:gravity="center">
+    android:padding="12dp">
 
     <TextView
-        android:id="@+id/widget_place_1_count"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:background="@drawable/count_badge"
-        android:text="0"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Top 3 lugares"
         android:textColor="#FFFFFF"
-        android:textSize="16sp"
+        android:textSize="14sp"
         android:textStyle="bold"
-        android:gravity="center"
-        android:layout_marginEnd="8dp"/>
+        android:layout_marginBottom="8dp"/>
 
-    <TextView
-        android:id="@+id/widget_place_2_count"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:background="@drawable/count_badge"
-        android:text="0"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        android:gravity="center"
-        android:layout_marginEnd="8dp"/>
+    <LinearLayout
+        android:id="@+id/widget_place_1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="4dp"
+        android:gravity="center_vertical">
 
-    <TextView
-        android:id="@+id/widget_place_3_count"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:background="@drawable/count_badge"
-        android:text="0"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        android:gravity="center"/>
+        <TextView
+            android:id="@+id/widget_place_1_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="📍 Lugar 1"
+            android:textColor="#E0E0E0"
+            android:textSize="12sp"
+            android:singleLine="true"
+            android:ellipsize="end"/>
+
+        <TextView
+            android:id="@+id/widget_place_1_count"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:background="@drawable/count_badge"
+            android:text="0"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:gravity="center"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/widget_place_2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="4dp"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/widget_place_2_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="📍 Lugar 2"
+            android:textColor="#E0E0E0"
+            android:textSize="12sp"
+            android:singleLine="true"
+            android:ellipsize="end"/>
+
+        <TextView
+            android:id="@+id/widget_place_2_count"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:background="@drawable/count_badge"
+            android:text="0"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:gravity="center"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/widget_place_3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/widget_place_3_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="📍 Lugar 3"
+            android:textColor="#E0E0E0"
+            android:textSize="12sp"
+            android:singleLine="true"
+            android:ellipsize="end"/>
+
+        <TextView
+            android:id="@+id/widget_place_3_count"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:background="@drawable/count_badge"
+            android:text="0"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:gravity="center"/>
+    </LinearLayout>
 
 </LinearLayout>
 EOF
@@ -407,23 +472,29 @@ public class TopPlacesWidget extends AppWidgetProvider {
 
             if (topPlaces.length() > 0) {
                 JSONObject place1 = topPlaces.getJSONObject(0);
+                views.setTextViewText(R.id.widget_place_1_name, "📍 " + place1.getString("name"));
                 views.setTextViewText(R.id.widget_place_1_count, String.valueOf(place1.getInt("count")));
+                views.setViewVisibility(R.id.widget_place_1, View.VISIBLE);
             } else {
-                views.setTextViewText(R.id.widget_place_1_count, "0");
+                views.setViewVisibility(R.id.widget_place_1, View.GONE);
             }
 
             if (topPlaces.length() > 1) {
                 JSONObject place2 = topPlaces.getJSONObject(1);
+                views.setTextViewText(R.id.widget_place_2_name, "📍 " + place2.getString("name"));
                 views.setTextViewText(R.id.widget_place_2_count, String.valueOf(place2.getInt("count")));
+                views.setViewVisibility(R.id.widget_place_2, View.VISIBLE);
             } else {
-                views.setTextViewText(R.id.widget_place_2_count, "0");
+                views.setViewVisibility(R.id.widget_place_2, View.GONE);
             }
 
             if (topPlaces.length() > 2) {
                 JSONObject place3 = topPlaces.getJSONObject(2);
+                views.setTextViewText(R.id.widget_place_3_name, "📍 " + place3.getString("name"));
                 views.setTextViewText(R.id.widget_place_3_count, String.valueOf(place3.getInt("count")));
+                views.setViewVisibility(R.id.widget_place_3, View.VISIBLE);
             } else {
-                views.setTextViewText(R.id.widget_place_3_count, "0");
+                views.setViewVisibility(R.id.widget_place_3, View.GONE);
             }
 
         } catch (JSONException e) {
@@ -431,7 +502,7 @@ public class TopPlacesWidget extends AppWidgetProvider {
         }
 
         Intent intent = new Intent(context, MainActivity.class);
-        intent.setAction("OPEN_CHECKIN");
+        intent.setAction("OPEN_TOP_YEAH");
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
 
         PendingIntent pendingIntent = PendingIntent.getActivity(
@@ -441,9 +512,9 @@ public class TopPlacesWidget extends AppWidgetProvider {
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
 
-        views.setOnClickPendingIntent(R.id.widget_place_1_count, pendingIntent);
-        views.setOnClickPendingIntent(R.id.widget_place_2_count, pendingIntent);
-        views.setOnClickPendingIntent(R.id.widget_place_3_count, pendingIntent);
+        views.setOnClickPendingIntent(R.id.widget_place_1, pendingIntent);
+        views.setOnClickPendingIntent(R.id.widget_place_2, pendingIntent);
+        views.setOnClickPendingIntent(R.id.widget_place_3, pendingIntent);
 
         appWidgetManager.updateAppWidget(appWidgetId, views);
     }
@@ -543,18 +614,32 @@ public class MainActivity extends BridgeActivity {
     }
 
     private void handleWidgetIntent(Intent intent) {
-        if (intent != null && "OPEN_CHECKIN".equals(intent.getAction())) {
-            runOnUiThread(() -> {
-                try {
-                    Thread.sleep(500);
-                    getBridge().getWebView().evaluateJavascript(
-                        "if (typeof CardStack !== 'undefined') { CardStack.currentIndex = 1; CardStack.updatePositions(); CardStack.loadCardContent(1); }",
-                        null
-                    );
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            });
+        if (intent != null) {
+            if ("OPEN_CHECKIN".equals(intent.getAction())) {
+                runOnUiThread(() -> {
+                    try {
+                        Thread.sleep(500);
+                        getBridge().getWebView().evaluateJavascript(
+                            "if (typeof CardStack !== 'undefined') { CardStack.currentIndex = 1; CardStack.updatePositions(); CardStack.loadCardContent(1); }",
+                            null
+                        );
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                });
+            } else if ("OPEN_TOP_YEAH".equals(intent.getAction())) {
+                runOnUiThread(() -> {
+                    try {
+                        Thread.sleep(500);
+                        getBridge().getWebView().evaluateJavascript(
+                            "if (typeof showTopPlacesModal !== 'undefined') { showTopPlacesModal(); }",
+                            null
+                        );
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                });
+            }
         }
     }
 }
